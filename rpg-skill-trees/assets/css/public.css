@@ -1,25 +1,22 @@
-.rst-builder{border:1px solid #ddd;padding:16px;border-radius:6px;background:#fafafa;font-family:inherit}
-.rst-builder__header{margin-bottom:12px}
-.rst-tree-list{display:flex;flex-wrap:wrap;gap:8px}
-.rst-tree-option{display:flex;align-items:center;gap:6px;padding:6px 8px;border:2px solid #ccc;border-radius:4px;background:#fff}
-.rst-tree-option input{margin:0}
-.rst-tree-icon{width:24px;height:24px;object-fit:cover;border-radius:4px}
-.rst-points{margin-top:8px}
-.rst-actions{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.rst-feedback{color:#b32d2e;font-weight:600;opacity:0;transition:opacity 0.2s ease}
-.rst-feedback.is-visible{opacity:1}
-.rst-builder__content{display:flex;flex-direction:column;gap:18px}
-.rst-tree{border:2px solid var(--rst-tree-color, #888);padding:12px;border-radius:6px;background:#fff;position:relative}
-.rst-tree.is-hidden{display:none}
-.rst-tree__tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;position:relative}
-.rst-tier{border:1px dashed #ddd;padding:8px;min-height:150px;background:#f9f9f9;border-radius:4px}
-.rst-tier__skills{display:flex;flex-direction:column;gap:8px;position:relative}
-.rst-skill{border:1px solid #ccc;border-radius:4px;padding:6px;cursor:pointer;background:#fff;position:relative}
-.rst-skill.is-selected{border-color:var(--rst-tree-color, #3b82f6);box-shadow:0 0 0 2px rgba(59,130,246,0.2)}
-.rst-skill__icon{width:32px;height:32px;object-fit:cover;float:right;margin-left:6px;border-radius:4px}
-.rst-skill__tooltip{font-size:12px;color:#555}
-.rst-skill__meta{font-size:12px;font-weight:600;color:#333;margin-top:4px}
-.rst-prereq-lines{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
-.rst-tier__skills .rst-skill{z-index:1}
-@media(max-width:900px){.rst-tree__tiers{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:600px){.rst-tree__tiers{grid-template-columns:1fr}}
+.rpg-skill-trees-builder { position: relative; border:1px solid #1f2937; padding: 18px; background:#0b1021; color:#e5e7eb; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+.rpg-builder-header { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; margin-bottom:15px; }
+.rpg-tree-list label { display:block; margin-bottom:6px; color:#cbd5f5; }
+.rpg-point-list { list-style: none; padding:0; margin:0; color:#e5e7eb; }
+.rpg-builder-body { position: relative; }
+.rpg-tree { margin-bottom:20px; }
+.rpg-tiers { display:flex; gap:12px; }
+.rpg-tier { background:#111827; padding:12px; min-width:180px; border-radius:8px; position:relative; border:1px solid #1f2937; box-shadow:inset 0 1px 0 rgba(255,255,255,0.03); }
+.rpg-tier h4 { margin-top:0; color:#93c5fd; }
+.rpg-skill { background:#1f2937; border:1px solid #374151; padding:10px; cursor:pointer; border-radius:6px; position:absolute; left:0; right:0; transition:all 0.15s ease; color:#f9fafb; }
+.rpg-skill:hover { border-color:#60a5fa; box-shadow:0 6px 16px rgba(0,0,0,0.35); }
+.rpg-skill.rpg-selected { border-color:#60a5fa; box-shadow:0 0 0 2px rgba(96,165,250,0.35); background:#0f172a; }
+.rpg-skill.rpg-locked { opacity:0.45; cursor:not-allowed; }
+.rpg-skill-icon img { width:32px; height:32px; object-fit:contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
+.rpg-skill-name { font-weight:bold; color:#f9fafb; }
+.rpg-skill-tooltip { font-size:12px; color:#cbd5e1; }
+.rpg-prereq-lines { position:absolute; top:0; left:0; pointer-events:none; }
+.rpg-builder-messages { color:#fca5a5; font-weight:bold; }
+.rpg-skill-trees-builder .button, .rpg-skill-trees-builder .button-primary { background:#1f2937; color:#f9fafb; border-color:#374151; box-shadow:none; }
+.rpg-skill-trees-builder .button:hover, .rpg-skill-trees-builder .button-primary:hover { background:#2563eb; color:#f8fafc; border-color:#1d4ed8; }
+.rpg-skill-trees-builder .button-primary { background:#2563eb; border-color:#1d4ed8; }
+@media(max-width:900px){ .rpg-tiers { flex-direction:column; } }
