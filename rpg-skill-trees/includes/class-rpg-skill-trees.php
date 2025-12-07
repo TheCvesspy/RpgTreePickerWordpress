@@ -63,7 +63,11 @@ class RPG_Skill_Trees {
 
     public function render_skill_meta($post) {
         wp_nonce_field('rpg_skill_meta', 'rpg_skill_meta_nonce');
-        $tree = get_post_meta($post->ID, '_rpg_tree', true);
+        $tree_meta = get_post_meta($post->ID, '_rpg_trees', true);
+        if (empty($tree_meta)) {
+            $legacy_tree = get_post_meta($post->ID, '_rpg_tree', true);
+            $tree_meta = $legacy_tree ? [$legacy_tree] : [];
+        }
         $tier = get_post_meta($post->ID, '_rpg_tier', true);
         $cost = get_post_meta($post->ID, '_rpg_cost', true);
         $icon = get_post_meta($post->ID, '_rpg_icon', true);
@@ -73,10 +77,10 @@ class RPG_Skill_Trees {
         $trees = get_posts(['post_type' => 'rpg_skill_tree', 'numberposts' => -1]);
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
 
-        echo '<p><label>' . esc_html__('Tree', 'rpg-skill-trees') . '</label><br />';
-        echo '<select name="rpg_tree">';
+        echo '<p><label>' . esc_html__('Tree(s)', 'rpg-skill-trees') . '</label><br />';
+        echo '<select name="rpg_trees[]" multiple size="5" class="widefat">';
         foreach ($trees as $t) {
-            echo '<option value="' . esc_attr($t->ID) . '" ' . selected($tree, $t->ID, false) . '>' . esc_html($t->post_title) . '</option>';
+            echo '<option value="' . esc_attr($t->ID) . '" ' . selected(in_array($t->ID, $tree_meta, true), true, false) . '>' . esc_html($t->post_title) . '</option>';
         }
         echo '</select></p>';
 
@@ -117,14 +121,17 @@ class RPG_Skill_Trees {
         }
 
         if (isset($_POST['rpg_skill_meta_nonce']) && wp_verify_nonce($_POST['rpg_skill_meta_nonce'], 'rpg_skill_meta')) {
-            $tree = isset($_POST['rpg_tree']) ? intval($_POST['rpg_tree']) : 0;
+            $trees = isset($_POST['rpg_trees']) ? array_map('intval', (array) $_POST['rpg_trees']) : [];
             $tier = isset($_POST['rpg_tier']) ? intval($_POST['rpg_tier']) : 1;
             $cost = isset($_POST['rpg_cost']) ? floatval($_POST['rpg_cost']) : 1;
             $icon = isset($_POST['rpg_icon']) ? esc_url_raw($_POST['rpg_icon']) : '';
             $tooltip = isset($_POST['rpg_tooltip']) ? wp_kses_post($_POST['rpg_tooltip']) : '';
             $prereqs = isset($_POST['rpg_prereqs']) ? array_map('intval', (array) $_POST['rpg_prereqs']) : [];
 
-            update_post_meta($post_id, '_rpg_tree', $tree);
+            update_post_meta($post_id, '_rpg_trees', $trees);
+            if (!empty($trees)) {
+                update_post_meta($post_id, '_rpg_tree', $trees[0]);
+            }
             update_post_meta($post_id, '_rpg_tier', max(1, min(4, $tier)));
             update_post_meta($post_id, '_rpg_cost', max(0, $cost));
             update_post_meta($post_id, '_rpg_icon', $icon);
@@ -214,17 +221,28 @@ class RPG_Skill_Trees {
         }
         $skill_data = [];
         foreach ($skills as $skill) {
-            $tree_id = intval(get_post_meta($skill->ID, '_rpg_tree', true));
-            $skill_data[] = [
-                'id' => $skill->ID,
-                'name' => $skill->post_title,
-                'tree' => $tree_id,
-                'tier' => intval(get_post_meta($skill->ID, '_rpg_tier', true)),
-                'cost' => floatval(get_post_meta($skill->ID, '_rpg_cost', true)),
-                'icon' => esc_url(get_post_meta($skill->ID, '_rpg_icon', true)),
-                'tooltip' => wp_kses_post(get_post_meta($skill->ID, '_rpg_tooltip', true)),
-                'prereqs' => (array) get_post_meta($skill->ID, '_rpg_prereqs', true),
-            ];
+            $trees_for_skill = get_post_meta($skill->ID, '_rpg_trees', true);
+            if (empty($trees_for_skill)) {
+                $legacy_tree = get_post_meta($skill->ID, '_rpg_tree', true);
+                $trees_for_skill = $legacy_tree ? [$legacy_tree] : [];
+            }
+            foreach ((array) $trees_for_skill as $tree_id) {
+                $tree_id = intval($tree_id);
+                if ($tree_id <= 0) {
+                    continue;
+                }
+                $skill_data[] = [
+                    'id' => $skill->ID,
+                    'instance' => $skill->ID . ':' . $tree_id,
+                    'name' => $skill->post_title,
+                    'tree' => $tree_id,
+                    'tier' => intval(get_post_meta($skill->ID, '_rpg_tier', true)),
+                    'cost' => floatval(get_post_meta($skill->ID, '_rpg_cost', true)),
+                    'icon' => esc_url(get_post_meta($skill->ID, '_rpg_icon', true)),
+                    'tooltip' => wp_kses_post(get_post_meta($skill->ID, '_rpg_tooltip', true)),
+                    'prereqs' => (array) get_post_meta($skill->ID, '_rpg_prereqs', true),
+                ];
+            }
         }
         return [
             'trees' => array_values($tree_data),
@@ -299,17 +317,60 @@ class RPG_Skill_Trees {
 
     private function validate_build($build, $settings) {
         $selected_trees = isset($build['trees']) ? array_map('intval', (array) $build['trees']) : [];
-        $selected_skills = isset($build['skills']) && is_array($build['skills']) ? array_keys(array_filter($build['skills'])) : [];
+        $raw_selected_skills = isset($build['skills']) && is_array($build['skills']) ? array_keys(array_filter($build['skills'])) : [];
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
         $skill_map = [];
+        $skill_tree_map = [];
         foreach ($skills as $skill) {
-            $skill_map[$skill->ID] = [
-                'tree' => intval(get_post_meta($skill->ID, '_rpg_tree', true)),
-                'tier' => intval(get_post_meta($skill->ID, '_rpg_tier', true)),
-                'cost' => floatval(get_post_meta($skill->ID, '_rpg_cost', true)),
-                'prereqs' => (array) get_post_meta($skill->ID, '_rpg_prereqs', true),
-            ];
+            $trees_for_skill = get_post_meta($skill->ID, '_rpg_trees', true);
+            if (empty($trees_for_skill)) {
+                $legacy_tree = get_post_meta($skill->ID, '_rpg_tree', true);
+                $trees_for_skill = $legacy_tree ? [$legacy_tree] : [];
+            }
+            $skill_tree_map[$skill->ID] = array_map('intval', (array) $trees_for_skill);
+            foreach ($skill_tree_map[$skill->ID] as $tree_id) {
+                if ($tree_id <= 0) {
+                    continue;
+                }
+                $instance_key = $skill->ID . ':' . $tree_id;
+                $skill_map[$instance_key] = [
+                    'skill_id' => $skill->ID,
+                    'tree' => $tree_id,
+                    'tier' => intval(get_post_meta($skill->ID, '_rpg_tier', true)),
+                    'cost' => floatval(get_post_meta($skill->ID, '_rpg_cost', true)),
+                    'prereqs' => (array) get_post_meta($skill->ID, '_rpg_prereqs', true),
+                ];
+            }
         }
+
+        $selected_skills = [];
+        foreach ($raw_selected_skills as $raw_key) {
+            if (false !== strpos($raw_key, ':')) {
+                [$skill_id, $tree_id] = array_map('intval', explode(':', $raw_key));
+                $instance_key = $skill_id . ':' . $tree_id;
+            } else {
+                $skill_id = intval($raw_key);
+                $tree_id = 0;
+                if (isset($skill_tree_map[$skill_id])) {
+                    foreach ($skill_tree_map[$skill_id] as $candidate) {
+                        if (in_array($candidate, $selected_trees, true)) {
+                            $tree_id = $candidate;
+                            break;
+                        }
+                    }
+                    if ($tree_id === 0 && !empty($skill_tree_map[$skill_id])) {
+                        $tree_id = intval($skill_tree_map[$skill_id][0]);
+                    }
+                }
+                $instance_key = $tree_id > 0 ? ($skill_id . ':' . $tree_id) : (string) $skill_id;
+            }
+
+            if (!isset($skill_map[$instance_key])) {
+                return ['valid' => false, 'message' => __('Unknown skill in build.', 'rpg-skill-trees')];
+            }
+            $selected_skills[] = $instance_key;
+        }
+
         usort($selected_skills, function($a, $b) use ($skill_map) {
             $tier_a = isset($skill_map[$a]) ? $skill_map[$a]['tier'] : 0;
             $tier_b = isset($skill_map[$b]) ? $skill_map[$b]['tier'] : 0;
@@ -319,15 +380,15 @@ class RPG_Skill_Trees {
         $totals = $settings['tier_points'];
         $spent = [1 => 0, 2 => 0, 3 => 0, 4 => 0];
         $tree_spent = [];
-        foreach ($selected_skills as $skill_id) {
-            if (!isset($skill_map[$skill_id])) {
+        foreach ($selected_skills as $skill_instance) {
+            if (!isset($skill_map[$skill_instance])) {
                 return ['valid' => false, 'message' => __('Unknown skill in build.', 'rpg-skill-trees')];
             }
-            $skill = $skill_map[$skill_id];
+            $skill = $skill_map[$skill_instance];
             if (!in_array($skill['tree'], $selected_trees, true)) {
                 return ['valid' => false, 'message' => __('Skill tree not selected.', 'rpg-skill-trees')];
             }
-            if (!$this->prerequisites_met_server($skill['prereqs'], $selected_skills)) {
+            if (!$this->prerequisites_met_server($skill['prereqs'], $selected_skills, $skill['tree'])) {
                 return ['valid' => false, 'message' => __('Prerequisites missing.', 'rpg-skill-trees')];
             }
             if (!$this->tier_requirement_met_server($skill, $tree_spent)) {
@@ -379,12 +440,13 @@ class RPG_Skill_Trees {
         return 0;
     }
 
-    private function prerequisites_met_server($prereqs, $selected_skills) {
+    private function prerequisites_met_server($prereqs, $selected_skills, $tree_id) {
         if (empty($prereqs)) {
             return true;
         }
         foreach ($prereqs as $req) {
-            if (!in_array($req, $selected_skills, true)) {
+            $instance_key = $req . ':' . $tree_id;
+            if (!in_array($instance_key, $selected_skills, true)) {
                 return false;
             }
         }
