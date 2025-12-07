@@ -1,0 +1,4 @@
+.rst-columns{display:flex;gap:20px;align-items:flex-start}
+.rst-column{flex:1;background:#fff;border:1px solid #ccd0d4;padding:15px;border-radius:4px}
+.rst-conversion-row{display:flex;gap:10px;margin-bottom:10px}
+.rst-conversion-row label{display:flex;align-items:center;gap:6px}
