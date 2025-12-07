@@ -150,6 +150,12 @@
         }
         const id = skill.id.toString();
         if(selectedSkills[id]){
+            const dependants = getSelectedDependants(skill.id);
+            if(dependants.length){
+                const dependantNames = dependants.map(getSkillName).join(', ');
+                showMessage(`Schopnost ${skill.name} nelze odebrat, jelikož je předpokladem pro ${dependantNames}`);
+                return;
+            }
             delete selectedSkills[id];
         } else {
             selectedSkills[id] = true;
@@ -157,6 +163,12 @@
         renderPointSummary();
         updateSkillStates();
         drawLines();
+    }
+
+    function getSelectedDependants(skillId){
+        return data.skills
+            .filter(s=>Array.isArray(s.prereqs) && s.prereqs.includes(skillId))
+            .filter(s=>selectedSkills[s.id]);
     }
 
     function calculatePoints(){
@@ -301,10 +313,12 @@
     function drawLines(){
         if(!svg) return;
         while (svg.firstChild) svg.removeChild(svg.firstChild);
-        const container = document.getElementById('rpg-builder-body');
-        const rect = container.getBoundingClientRect();
+        const body = document.getElementById('rpg-builder-body');
+        const rect = body.getBoundingClientRect();
         svg.setAttribute('width', rect.width);
         svg.setAttribute('height', rect.height);
+        svg.style.top = `${body.offsetTop}px`;
+        svg.style.left = `${body.offsetLeft}px`;
         $('.rpg-skill').each(function(){
             const id = parseInt($(this).data('id'),10);
             const skill = data.skills.find(s=>s.id===id);
