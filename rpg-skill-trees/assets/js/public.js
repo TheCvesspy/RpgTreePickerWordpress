@@ -4,6 +4,44 @@
     let selectedSkills = {};
     let svg;
 
+    function findSkillByInstance(instanceId){
+        return data.skills.find(s=>s.instance === instanceId);
+    }
+
+    function findSkillInstance(baseId, treeId){
+        return data.skills.find(s=>s.id === parseInt(baseId,10) && s.tree === parseInt(treeId,10));
+    }
+
+    function getInstanceIdForSkill(baseId, treeId){
+        const instance = findSkillInstance(baseId, treeId);
+        return instance ? instance.instance : null;
+    }
+
+    function normalizeLoadedSkills(rawSkills){
+        const normalized = {};
+        if(!rawSkills) return normalized;
+        Object.keys(rawSkills).forEach(key=>{
+            if(!rawSkills[key]) return;
+            if(key.includes(':')){
+                if(findSkillByInstance(key)){
+                    normalized[key] = true;
+                }
+                return;
+            }
+            const baseId = parseInt(key,10);
+            const preferred = data.skills.find(s=>s.id===baseId && selectedTrees.includes(s.tree));
+            if(preferred){
+                normalized[preferred.instance] = true;
+                return;
+            }
+            const fallback = data.skills.find(s=>s.id===baseId);
+            if(fallback){
+                normalized[fallback.instance] = true;
+            }
+        });
+        return normalized;
+    }
+
     function init(){
         svg = document.getElementById('rpg-prereq-lines');
         renderTreeSelector();
@@ -25,14 +63,12 @@
                 if(!selectedTrees.includes(val)) selectedTrees.push(val);
             } else {
                 selectedTrees = selectedTrees.filter(t=>t!==val);
-                for (const key in selectedSkills){
-                    if(selectedSkills[key] === true){
-                        const skill = data.skills.find(s=>s.id===parseInt(key,10));
-                        if(skill && skill.tree === val){
-                            delete selectedSkills[key];
-                        }
+                Object.keys(selectedSkills).forEach(key=>{
+                    const skill = findSkillByInstance(key);
+                    if(skill && skill.tree === val){
+                        delete selectedSkills[key];
                     }
-                }
+                });
             }
             renderBuilder();
         });
@@ -70,7 +106,7 @@
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
                 skills.forEach(skill=>{
-                    const skillNode = $('<div class="rpg-skill" data-id="'+skill.id+'" data-tree="'+treeId+'" data-tier="'+skill.tier+'"></div>');
+                    const skillNode = $('<div class="rpg-skill" data-instance="'+skill.instance+'" data-id="'+skill.id+'" data-tree="'+treeId+'" data-tier="'+skill.tier+'"></div>');
                     if(skill.icon){
                         skillNode.append('<div class="rpg-skill-icon"><img src="'+skill.icon+'" alt="" /></div>');
                     }
@@ -153,9 +189,9 @@
             showMessage(validateSkill(skill));
             return;
         }
-        const id = skill.id.toString();
+        const id = skill.instance.toString();
         if(selectedSkills[id]){
-            const dependants = getSelectedDependants(skill.id);
+            const dependants = getSelectedDependants(skill);
             if(dependants.length){
                 const dependantNames = dependants.map(dep=>getSkillName(dep.id)).join(', ');
                 showMessage(`Schopnost ${skill.name} nelze odebrat, jelikož je předpokladem pro ${dependantNames}`);
@@ -170,17 +206,18 @@
         drawLines();
     }
 
-    function getSelectedDependants(skillId){
+    function getSelectedDependants(skill){
         return data.skills
-            .filter(s=>Array.isArray(s.prereqs) && s.prereqs.includes(skillId))
-            .filter(s=>selectedSkills[s.id]);
+            .filter(s=>s.tree === skill.tree)
+            .filter(s=>Array.isArray(s.prereqs) && s.prereqs.includes(skill.id))
+            .filter(s=>selectedSkills[s.instance]);
     }
 
     function calculatePoints(){
         const totals = {1: data.settings.tier_points[1] || 0, 2: data.settings.tier_points[2] || 0, 3: data.settings.tier_points[3] || 0, 4: data.settings.tier_points[4] || 0};
         const spent = {1:0,2:0,3:0,4:0};
         Object.keys(selectedSkills).forEach(id=>{
-            const skill = data.skills.find(s=>s.id===parseInt(id,10));
+            const skill = findSkillByInstance(id);
             if(skill){
                 spent[skill.tier] = (spent[skill.tier]||0) + parseFloat(skill.cost||0);
             }
@@ -220,7 +257,7 @@
         if(requiredPoints<=0) return true;
         const spent = {1:0,2:0,3:0,4:0};
         Object.keys(selectedSkills).forEach(id=>{
-            const s = data.skills.find(x=>x.id===parseInt(id,10));
+            const s = findSkillByInstance(id);
             if(s && s.tree===skill.tree){
                 spent[s.tier] = (spent[s.tier]||0) + parseFloat(s.cost||0);
             }
@@ -230,7 +267,10 @@
 
     function prerequisitesMet(skill){
         if(!skill.prereqs || !skill.prereqs.length) return true;
-        return skill.prereqs.every(id=>selectedSkills[id]);
+        return skill.prereqs.every(id=>{
+            const instanceId = getInstanceIdForSkill(id, skill.tree);
+            return instanceId ? selectedSkills[instanceId] : false;
+        });
     }
 
     function validateSkill(skill){
@@ -248,10 +288,10 @@
 
     function updateSkillStates(){
         $('.rpg-skill').each(function(){
-            const id = parseInt($(this).data('id'),10);
-            const skill = data.skills.find(s=>s.id===id);
+            const instanceId = $(this).data('instance');
+            const skill = findSkillByInstance(instanceId);
             if(!skill) return;
-            const isSelected = !!selectedSkills[id];
+            const isSelected = !!selectedSkills[instanceId];
             $(this).toggleClass('rpg-selected', isSelected);
             const msg = validateSkill(skill);
             if(msg!=='' && !isSelected){
@@ -302,7 +342,7 @@
             $.post(data.ajaxUrl, {action:'rpg_skill_trees_load_build', nonce:data.nonce}, function(resp){
                 if(resp.success && resp.data){
                     selectedTrees = resp.data.trees || [];
-                    selectedSkills = resp.data.skills || {};
+                    selectedSkills = normalizeLoadedSkills(resp.data.skills || {});
                     $('#rpg-tree-list input').prop('checked', false);
                     selectedTrees.forEach(id=>{ $('#rpg-tree-list input[value="'+id+'"]').prop('checked', true); });
                     renderBuilder();
@@ -325,12 +365,14 @@
         svg.style.top = `${body.offsetTop}px`;
         svg.style.left = `${body.offsetLeft}px`;
         $('.rpg-skill').each(function(){
-            const id = parseInt($(this).data('id'),10);
-            const skill = data.skills.find(s=>s.id===id);
+            const instanceId = $(this).data('instance');
+            const skill = findSkillByInstance(instanceId);
             if(!skill || !skill.prereqs) return;
             const targetRect = this.getBoundingClientRect();
             skill.prereqs.forEach(pr=>{
-                const prereqEl = $('.rpg-skill[data-id="'+pr+'"]')[0];
+                const prereqInstance = getInstanceIdForSkill(pr, skill.tree);
+                if(!prereqInstance) return;
+                const prereqEl = $('.rpg-skill[data-instance="'+prereqInstance+'"]')[0];
                 if(!prereqEl) return;
                 const prereqRect = prereqEl.getBoundingClientRect();
                 const start = {
