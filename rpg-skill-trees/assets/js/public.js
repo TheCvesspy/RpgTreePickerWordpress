@@ -60,11 +60,15 @@
             const tiersWrap = $('<div class="rpg-tiers"></div>');
             const layout = calculateLayoutForTree(treeId);
             for(let tier=1;tier<=4;tier++){
-                const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"><h4>'+dataLabel('Tier')+' '+tier+'</h4></div>');
+                const tierColumn = $('<div class="rpg-tier-column" data-tier="'+tier+'"></div>');
+                tierColumn.append('<div class="rpg-tier-title">'+dataLabel('Tier')+' '+tier+'</div>');
+                const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"></div>');
                 const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
-                const headerOffset = 38; // space for tier heading
-                tierCol.css('min-height', (layout.totalRows * layout.rowHeight + headerOffset)+'px');
-                tierCol.css('padding-top', headerOffset+'px');
+                const paddingOffset = 12;
+                const paddingBottom = 12;
+                tierCol.css('min-height', (layout.totalRows * layout.rowHeight + paddingOffset + paddingBottom)+'px');
+                tierCol.css('padding-top', paddingOffset+'px');
+                tierCol.css('padding-bottom', paddingBottom+'px');
                 skills.forEach(skill=>{
                     const skillNode = $('<div class="rpg-skill" data-id="'+skill.id+'" data-tree="'+treeId+'" data-tier="'+skill.tier+'"></div>');
                     if(skill.icon){
@@ -77,12 +81,13 @@
                         skillNode.append('<div class="rpg-skill-prereqs" data-prereqs="'+skill.prereqs.join(',')+'">'+data.i18n.requiresSkills+skill.prereqs.map(id=>getSkillName(id)).join(', ')+'</div>');
                     }
                     const row = layout.rows[skill.id] || 0;
-                    const top = headerOffset + (row * layout.rowHeight);
+                    const top = paddingOffset + (row * layout.rowHeight);
                     skillNode.css('top', top + 'px');
                     skillNode.on('click', ()=>toggleSkill(skill));
                     tierCol.append(skillNode);
                 });
-                tiersWrap.append(tierCol);
+                tierColumn.append(tierCol);
+                tiersWrap.append(tierColumn);
             }
             treeWrap.append(tiersWrap);
             body.append(treeWrap);
@@ -152,7 +157,7 @@
         if(selectedSkills[id]){
             const dependants = getSelectedDependants(skill.id);
             if(dependants.length){
-                const dependantNames = dependants.map(getSkillName).join(', ');
+                const dependantNames = dependants.map(dep=>getSkillName(dep.id)).join(', ');
                 showMessage(`Schopnost ${skill.name} nelze odebrat, jelikož je předpokladem pro ${dependantNames}`);
                 return;
             }
