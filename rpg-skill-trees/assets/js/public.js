@@ -1,347 +1,284 @@
 (function($){
-    const data = window.RPGSkillTreesData || {};
-    let selectedTrees = [];
-    let selectedSkills = {};
-    let svg;
+    const __ = function(text){ return text; };
+    let state = {
+        selectedTrees: [],
+        selectedSkills: [],
+        remaining: {},
+        treeSpent: {},
+        conversions: RST_DATA.settings.conversions || [],
+        tierPoints: RST_DATA.settings.tier_points || {},
+    };
 
-    function init(){
-        svg = document.getElementById('rpg-prereq-lines');
-        renderTreeSelector();
-        renderPointSummary();
-        bindActions();
+    function resetState(){
+        state.selectedTrees = [];
+        state.selectedSkills = [];
+        state.remaining = $.extend(true, {}, state.tierPoints);
+        state.treeSpent = {};
     }
 
-    function renderTreeSelector(){
-        const list = $('#rpg-tree-list');
-        list.empty();
-        data.trees.forEach(tree => {
-            const id = 'rpg-tree-'+tree.id;
-            const checkbox = $('<label class="rpg-tree-option"><input type="checkbox" value="'+tree.id+'" id="'+id+'"> '+tree.name+'</label>');
-            list.append(checkbox);
-        });
-        list.find('input').on('change', function(){
-            const val = parseInt($(this).val(),10);
-            if($(this).is(':checked')){
-                if(!selectedTrees.includes(val)) selectedTrees.push(val);
-            } else {
-                selectedTrees = selectedTrees.filter(t=>t!==val);
-                for (const key in selectedSkills){
-                    if(selectedSkills[key] === true){
-                        const skill = data.skills.find(s=>s.id===parseInt(key,10));
-                        if(skill && skill.tree === val){
-                            delete selectedSkills[key];
-                        }
-                    }
-                }
-            }
-            renderBuilder();
-        });
-    }
-
-    function groupSkillsByTree(){
-        const grouped = {};
-        data.skills.forEach(skill=>{
-            if(!grouped[skill.tree]) grouped[skill.tree] = {};
-            if(!grouped[skill.tree][skill.tier]) grouped[skill.tree][skill.tier] = [];
-            grouped[skill.tree][skill.tier].push(skill);
-        });
-        return grouped;
-    }
-
-    function renderBuilder(){
-        const body = $('#rpg-builder-body');
-        body.empty();
-        const grouped = groupSkillsByTree();
-        selectedTrees.forEach(treeId=>{
-            const tree = data.trees.find(t=>t.id===treeId);
-            if(!tree) return;
-            const treeWrap = $('<div class="rpg-tree" data-tree="'+treeId+'"></div>');
-            treeWrap.append('<h3>'+tree.name+'</h3>');
-            const tiersWrap = $('<div class="rpg-tiers"></div>');
-            const layout = calculateLayoutForTree(treeId);
-            for(let tier=1;tier<=4;tier++){
-                const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"><h4>'+dataLabel('Tier')+' '+tier+'</h4></div>');
-                const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
-                const headerOffset = 38; // space for tier heading
-                tierCol.css('min-height', (layout.totalRows * layout.rowHeight + headerOffset)+'px');
-                tierCol.css('padding-top', headerOffset+'px');
-                skills.forEach(skill=>{
-                    const skillNode = $('<div class="rpg-skill" data-id="'+skill.id+'" data-tree="'+treeId+'" data-tier="'+skill.tier+'"></div>');
-                    if(skill.icon){
-                        skillNode.append('<div class="rpg-skill-icon"><img src="'+skill.icon+'" alt="" /></div>');
-                    }
-                    skillNode.append('<div class="rpg-skill-name">'+skill.name+'</div>');
-                    skillNode.append('<div class="rpg-skill-tooltip">'+skill.tooltip+'</div>');
-                    skillNode.append('<div class="rpg-skill-cost">'+skill.cost+' pt</div>');
-                    if(skill.prereqs && skill.prereqs.length){
-                        skillNode.append('<div class="rpg-skill-prereqs" data-prereqs="'+skill.prereqs.join(',')+'">'+data.i18n.requiresSkills+skill.prereqs.map(id=>getSkillName(id)).join(', ')+'</div>');
-                    }
-                    const row = layout.rows[skill.id] || 0;
-                    const top = headerOffset + (row * layout.rowHeight);
-                    skillNode.css('top', top + 'px');
-                    skillNode.on('click', ()=>toggleSkill(skill));
-                    tierCol.append(skillNode);
-                });
-                tiersWrap.append(tierCol);
-            }
-            treeWrap.append(tiersWrap);
-            body.append(treeWrap);
-        });
-        renderPointSummary();
-        drawLines();
-        updateSkillStates();
-    }
-
-    // Determine rows so connected skills align horizontally. If multiple prerequisites exist
-    // the dependent skill takes the row of the first prerequisite, and subsequent prerequisites
-    // are pushed to rows beneath that primary requirement.
-    function calculateLayoutForTree(treeId){
-        const skills = data.skills.filter(s=>s.tree===treeId);
-        const rows = {};
-        let nextRow = 0;
-        const rowHeight = 120;
-        const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier);
-
-        // seed tier 1
-        tierSkills(1).forEach(skill=>{
-            if(rows[skill.id] === undefined){
-                rows[skill.id] = nextRow++;
-            }
-        });
-
-        for(let tier=2;tier<=4;tier++){
-            tierSkills(tier).forEach(skill=>{
-                if(skill.prereqs && skill.prereqs.length){
-                    const primary = skill.prereqs[0];
-                    const primaryRow = rows[primary] !== undefined ? rows[primary] : (rows[primary] = nextRow++);
-                    rows[skill.id] = primaryRow;
-                    skill.prereqs.slice(1).forEach((pr,idx)=>{
-                        if(rows[pr] === undefined){
-                            rows[pr] = primaryRow + idx + 1;
-                            nextRow = Math.max(nextRow, rows[pr] + 1);
-                        }
-                    });
-                } else {
-                    if(rows[skill.id] === undefined){
-                        rows[skill.id] = nextRow++;
-                    }
-                }
-            });
+    function renderPoints(){
+        let parts = [];
+        for (let i=1;i<=4;i++){
+            let spent = (state.tierPoints[i] - (state.remaining[i]||0)).toFixed(2);
+            parts.push('Tier '+i+': '+spent+'/'+(state.tierPoints[i]||0));
         }
+        $('.rst-points-summary').text(parts.join(' | '));
+    }
 
-        // ensure all skills have a row
-        skills.forEach(skill=>{
-            if(rows[skill.id] === undefined){
-                rows[skill.id] = nextRow++;
+    function conversionRatio(from,to){
+        for (let i=0;i<state.conversions.length;i++){
+            if (parseInt(state.conversions[i].from)===parseInt(from) && parseInt(state.conversions[i].to)===parseInt(to)){
+                return parseFloat(state.conversions[i].ratio);
             }
-        });
-
-        return { rows, totalRows: Math.max(1, nextRow), rowHeight };
+        }
+        return 0;
     }
 
-    function dataLabel(base){
-        return base;
+    function canAfford(tier, cost){
+        let result = spendWithConversion($.extend(true, {}, state.remaining), cost, tier);
+        return result.success;
     }
 
-    function toggleSkill(skill){
-        if(!canSelectSkill(skill)){
-            showMessage(validateSkill(skill));
+    function spendWithConversion(remaining, cost, tier){
+        let original = $.extend(true, {}, remaining);
+        remaining[tier] = remaining[tier] || 0;
+        if (remaining[tier] >= cost){
+            remaining[tier] -= cost;
+            return {success: true, remaining: remaining};
+        }
+        let deficit = cost - remaining[tier];
+        remaining[tier] = 0;
+        for (let i=1;i<=4;i++){
+            if (i===tier) continue;
+            let available = remaining[i] || 0;
+            let ratio = conversionRatio(i, tier);
+            if (available <= 0 || ratio <=0) continue;
+            let produced = available * ratio;
+            if (produced >= deficit){
+                let neededFromDonor = deficit / ratio;
+                remaining[i] -= neededFromDonor;
+                deficit = 0;
+                break;
+            } else {
+                remaining[i] = 0;
+                deficit -= produced;
+            }
+        }
+        if (deficit <= 0){
+            return {success: true, remaining: remaining};
+        }
+        return {success: false, remaining: original};
+    }
+
+    function toggleSkill($skill){
+        const id = parseInt($skill.data('skill-id'));
+        const tier = parseInt($skill.data('tier'));
+        const cost = parseFloat($skill.data('cost'));
+        const treeId = parseInt($skill.data('tree-id'));
+        const prereqs = JSON.parse($skill.attr('data-prereqs')) || [];
+        const minPrev = parseFloat($skill.data('min-prev')) || 0;
+
+        if (state.selectedSkills.includes(id)){
+            // deselect
+            state.selectedSkills = state.selectedSkills.filter(s => s !== id);
+            state.remaining[tier] = (state.remaining[tier]||0) + cost;
+            state.treeSpent[treeId] = state.treeSpent[treeId] || {};
+            state.treeSpent[treeId][tier] = Math.max(0, (state.treeSpent[treeId][tier]||0) - cost);
+            $skill.removeClass('is-selected');
+            renderPoints();
+            drawPrereqLines();
             return;
         }
-        const id = skill.id.toString();
-        if(selectedSkills[id]){
-            delete selectedSkills[id];
-        } else {
-            selectedSkills[id] = true;
+
+        if (state.selectedTrees.indexOf(treeId) === -1){
+            feedback(__('Select the tree before adding its skills.'));
+            return;
         }
-        renderPointSummary();
-        updateSkillStates();
-        drawLines();
-    }
 
-    function calculatePoints(){
-        const totals = {1: data.settings.tier_points[1] || 0, 2: data.settings.tier_points[2] || 0, 3: data.settings.tier_points[3] || 0, 4: data.settings.tier_points[4] || 0};
-        const spent = {1:0,2:0,3:0,4:0};
-        Object.keys(selectedSkills).forEach(id=>{
-            const skill = data.skills.find(s=>s.id===parseInt(id,10));
-            if(skill){
-                spent[skill.tier] = (spent[skill.tier]||0) + parseFloat(skill.cost||0);
-            }
-        });
-        return {totals, spent};
-    }
-
-    function convertPoints(amount, fromTier, toTier){
-        if(fromTier === toTier) return amount;
-        const rule = (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===parseInt(fromTier,10) && parseInt(r.to,10)===parseInt(toTier,10));
-        if(!rule) return 0;
-        return amount * parseFloat(rule.ratio||0);
-    }
-
-    function hasPointsForSkill(skill){
-        const {totals, spent} = calculatePoints();
-        const available = totals[skill.tier] - spent[skill.tier];
-        if(available >= skill.cost) return true;
-        // attempt conversions from other tiers
-        let effective = available;
-        for(let t=1;t<=4;t++){
-            if(t===skill.tier) continue;
-            const diff = totals[t] - spent[t];
-            if(diff>0){
-                effective += convertPoints(diff, t, skill.tier);
-            }
-        }
-        return effective >= skill.cost;
-    }
-
-    function tierRequirementMet(skill){
-        const tree = data.trees.find(t=>t.id===skill.tree);
-        if(!tree) return true;
-        const reqs = tree.tier_requirements || {};
-        if(skill.tier<=1) return true;
-        const requiredPoints = parseFloat(reqs[skill.tier-1] || 0);
-        if(requiredPoints<=0) return true;
-        const spent = {1:0,2:0,3:0,4:0};
-        Object.keys(selectedSkills).forEach(id=>{
-            const s = data.skills.find(x=>x.id===parseInt(id,10));
-            if(s && s.tree===skill.tree){
-                spent[s.tier] = (spent[s.tier]||0) + parseFloat(s.cost||0);
-            }
-        });
-        return spent[skill.tier-1] >= requiredPoints;
-    }
-
-    function prerequisitesMet(skill){
-        if(!skill.prereqs || !skill.prereqs.length) return true;
-        return skill.prereqs.every(id=>selectedSkills[id]);
-    }
-
-    function validateSkill(skill){
-        if(!selectedTrees.includes(skill.tree)) return data.i18n.treeRequired;
-        if(!tierRequirementMet(skill)) return data.i18n.lockedByTier;
-        if(!prerequisitesMet(skill)) return data.i18n.requiresSkills + skill.prereqs.map(getSkillName).join(', ');
-        if(!hasPointsForSkill(skill)) return data.i18n.insufficientPoints;
-        return '';
-    }
-
-    function canSelectSkill(skill){
-        const message = validateSkill(skill);
-        return message === '';
-    }
-
-    function updateSkillStates(){
-        $('.rpg-skill').each(function(){
-            const id = parseInt($(this).data('id'),10);
-            const skill = data.skills.find(s=>s.id===id);
-            if(!skill) return;
-            const isSelected = !!selectedSkills[id];
-            $(this).toggleClass('rpg-selected', isSelected);
-            const msg = validateSkill(skill);
-            if(msg!=='' && !isSelected){
-                $(this).addClass('rpg-locked').attr('title', msg);
-            } else {
-                $(this).removeClass('rpg-locked').attr('title','');
-            }
-        });
-    }
-
-    function renderPointSummary(){
-        const summary = $('#rpg-point-summary');
-        summary.empty();
-        const {totals, spent} = calculatePoints();
-        const list = $('<ul class="rpg-point-list"></ul>');
-        for(let t=1;t<=4;t++){
-            list.append('<li>Tier '+t+': '+spent[t]+'/'+totals[t]+'</li>');
-        }
-        summary.append('<h3>Points</h3>');
-        summary.append(list);
-    }
-
-    function showMessage(msg){
-        if(!msg) return;
-        const container = $('#rpg-builder-messages');
-        container.text(msg).show();
-        setTimeout(()=>container.fadeOut(), 2500);
-    }
-
-    function getSkillName(id){
-        const skill = data.skills.find(s=>s.id===parseInt(id,10));
-        return skill ? skill.name : '';
-    }
-
-    function bindActions(){
-        $('.rpg-save-build').on('click', function(){
-            if(data.settings.require_login && !data.currentUser){
-                showMessage(data.i18n.loginRequired);
+        for (let p of prereqs){
+            if (state.selectedSkills.indexOf(parseInt(p)) === -1){
+                feedback(__('Missing prerequisite: ')+p);
                 return;
             }
-            $.post(data.ajaxUrl, {action:'rpg_skill_trees_save_build', nonce:data.nonce, build: JSON.stringify({trees:selectedTrees, skills:selectedSkills})}, function(resp){
-                if(resp.success){
-                    showMessage(data.i18n.saved);
-                }
+        }
+
+        state.treeSpent[treeId] = state.treeSpent[treeId] || {};
+        if (tier > 1){
+            let required = getTreeRule(treeId, tier);
+            let spentPrev = state.treeSpent[treeId][tier-1] || 0;
+            if (spentPrev < required){
+                feedback(__('Need at least ')+required+__(' points in previous tier for this tree.'));
+                return;
+            }
+        }
+
+        if (minPrev > 0 && tier > 1){
+            let spentPrev = state.treeSpent[treeId][tier-1] || 0;
+            if (spentPrev < minPrev){
+                feedback(__('Skill requires ')+minPrev+__(' points in previous tier.'));
+                return;
+            }
+        }
+
+        if (!canAfford(tier, cost)){
+            feedback(__('Not enough points (including conversions).'));
+            return;
+        }
+
+        let result = spendWithConversion(state.remaining, cost, tier);
+        if (!result.success){
+            feedback(__('Not enough points to spend.'));
+            return;
+        }
+        state.remaining = result.remaining;
+        state.selectedSkills.push(id);
+        state.treeSpent[treeId][tier] = (state.treeSpent[treeId][tier] || 0) + cost;
+        $skill.addClass('is-selected');
+        renderPoints();
+        drawPrereqLines();
+    }
+
+    function getTreeRule(treeId, tier){
+        let tree = RST_DATA.trees.find(t => parseInt(t.id) === parseInt(treeId));
+        if (!tree) return 0;
+        return parseFloat(tree.tier_rules[tier] || 0);
+    }
+
+    function feedback(text){
+        $('.rst-feedback').text(text).addClass('is-visible');
+        setTimeout(()=>{$('.rst-feedback').removeClass('is-visible');}, 3000);
+    }
+
+    function drawPrereqLines(){
+        $('.rst-tree').each(function(){
+            const $tree = $(this);
+            const $svg = $tree.find('svg.rst-prereq-lines');
+            $svg.empty();
+            let svgOffset = $svg.offset();
+            $tree.find('.rst-skill').each(function(){
+                const $skill = $(this);
+                const prereqs = JSON.parse($skill.attr('data-prereqs')) || [];
+                prereqs.forEach(function(pr){
+                    const $prSkill = $tree.find('.rst-skill[data-skill-id="'+pr+'"]');
+                    if (!$prSkill.length) return;
+                    const from = $prSkill[0].getBoundingClientRect();
+                    const to = $skill[0].getBoundingClientRect();
+                    const svgRect = $svg[0].getBoundingClientRect();
+                    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+                    line.setAttribute('x1', from.left + from.width/2 - svgRect.left);
+                    line.setAttribute('y1', from.top + from.height/2 - svgRect.top);
+                    line.setAttribute('x2', to.left + to.width/2 - svgRect.left);
+                    line.setAttribute('y2', to.top + to.height/2 - svgRect.top);
+                    line.setAttribute('stroke', 'var(--rst-tree-color, #888)');
+                    line.setAttribute('stroke-width', '2');
+                    $svg.append(line);
+                });
             });
-        });
-        $('.rpg-load-build').on('click', function(){
-            $.post(data.ajaxUrl, {action:'rpg_skill_trees_load_build', nonce:data.nonce}, function(resp){
-                if(resp.success && resp.data){
-                    selectedTrees = resp.data.trees || [];
-                    selectedSkills = resp.data.skills || {};
-                    $('#rpg-tree-list input').prop('checked', false);
-                    selectedTrees.forEach(id=>{ $('#rpg-tree-list input[value="'+id+'"]').prop('checked', true); });
-                    renderBuilder();
-                }
-            });
-        });
-        $('.rpg-reset-build').on('click', function(){
-            selectedSkills = {};
-            renderBuilder();
         });
     }
 
-    function drawLines(){
-        if(!svg) return;
-        while (svg.firstChild) svg.removeChild(svg.firstChild);
-        const container = document.getElementById('rpg-builder-body');
-        const rect = container.getBoundingClientRect();
-        svg.setAttribute('width', rect.width);
-        svg.setAttribute('height', rect.height);
-        $('.rpg-skill').each(function(){
-            const id = parseInt($(this).data('id'),10);
-            const skill = data.skills.find(s=>s.id===id);
-            if(!skill || !skill.prereqs) return;
-            const targetRect = this.getBoundingClientRect();
-            skill.prereqs.forEach(pr=>{
-                const prereqEl = $('.rpg-skill[data-id="'+pr+'"]')[0];
-                if(!prereqEl) return;
-                const prereqRect = prereqEl.getBoundingClientRect();
-                const start = {
-                    x: prereqRect.left - rect.left + prereqRect.width,
-                    y: prereqRect.top - rect.top + prereqRect.height/2
-                };
-                const end = {
-                    x: targetRect.left - rect.left,
-                    y: targetRect.top - rect.top + targetRect.height/2
-                };
-                const midX = (start.x + end.x) / 2;
-                const points = [
-                    `${start.x},${start.y}`,
-                    `${midX},${start.y}`,
-                    `${midX},${end.y}`,
-                    `${end.x},${end.y}`
-                ].join(' ');
-                const poly = document.createElementNS('http://www.w3.org/2000/svg','polyline');
-                poly.setAttribute('points', points);
-                poly.setAttribute('fill','none');
-                poly.setAttribute('stroke', '#8ab4f8');
-                poly.setAttribute('stroke-width', '2');
-                poly.setAttribute('stroke-linejoin','round');
-                svg.appendChild(poly);
-            });
+    function applyTreeVisibility(){
+        $('.rst-tree').each(function(){
+            const id = parseInt($(this).data('tree-id'));
+            if (state.selectedTrees.indexOf(id) === -1){
+                $(this).addClass('is-hidden');
+            } else {
+                $(this).removeClass('is-hidden');
+            }
+        });
+        drawPrereqLines();
+    }
+
+    function saveBuild(){
+        if (RST_DATA.login_required && !RST_DATA.user_logged_in){
+            feedback(__('Login required to save builds.'));
+            return;
+        }
+        $.post(RST_DATA.ajax, {
+            action: 'rst_save_build',
+            nonce: RST_DATA.nonce,
+            skills: state.selectedSkills
+        }).done(function(resp){
+            if (resp.success){
+                feedback(resp.data.message);
+            } else {
+                feedback(resp.data.message || __('Could not save build.'));
+            }
         });
     }
 
-    $(document).ready(function(){
-        init();
-        $(window).on('resize', drawLines);
+    function loadBuild(){
+        $.post(RST_DATA.ajax, {
+            action: 'rst_load_build',
+            nonce: RST_DATA.nonce
+        }).done(function(resp){
+            if (resp.success && resp.data.build){
+                resetState();
+                let skillsFromBuild = resp.data.build.skills.map(s => parseInt(s));
+                // ensure trees that contain skills are selected
+                skillsFromBuild.forEach(function(id){
+                    const $skill = $('.rst-skill[data-skill-id="'+id+'"]');
+                    if (!$skill.length) return;
+                    const treeId = parseInt($skill.data('tree-id'));
+                    if (state.selectedTrees.indexOf(treeId)===-1){
+                        state.selectedTrees.push(treeId);
+                        $('.rst-tree-toggle[value="'+treeId+'"]').prop('checked', true);
+                    }
+                    toggleSkill($skill);
+                });
+            }
+            feedback(resp.data.message || __('Build loaded.'));
+        });
+    }
+
+    function resetBuild(){
+        resetState();
+        $('.rst-skill').removeClass('is-selected');
+        $('.rst-tree-toggle').prop('checked', false);
+        applyTreeVisibility();
+        renderPoints();
+    }
+
+    $(function(){
+        resetState();
+        renderPoints();
+
+        $('.rst-tree-toggle').on('change', function(){
+            const id = parseInt($(this).val());
+            if ($(this).is(':checked')){
+                if (state.selectedTrees.indexOf(id)===-1){
+                    state.selectedTrees.push(id);
+                }
+            } else {
+                state.selectedTrees = state.selectedTrees.filter(t => t !== id);
+                // remove skills from deselected tree
+                $('.rst-skill[data-tree-id="'+id+'"]').each(function(){
+                    if ($(this).hasClass('is-selected')){
+                        toggleSkill($(this));
+                    }
+                });
+            }
+            applyTreeVisibility();
+        });
+
+        $('.rst-skill').on('click keypress', function(e){
+            if (e.type === 'keypress' && e.key !== 'Enter') return;
+            toggleSkill($(this));
+        });
+
+        $('.rst-save-build').on('click', function(){
+            saveBuild();
+        });
+        $('.rst-load-build').on('click', function(){
+            loadBuild();
+        });
+        $('.rst-reset-build').on('click', function(){
+            resetBuild();
+        });
+
+        $(window).on('resize', function(){
+            drawPrereqLines();
+        });
+        drawPrereqLines();
     });
 })(jQuery);
