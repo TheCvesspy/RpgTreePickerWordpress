@@ -181,6 +181,7 @@
         const rowHeight = getSkillRowHeight(treeId);
         let nextRow = 0;
         const rowUsage = {};
+        const blockSpacing = 1;
         const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier);
         const getName = id => {
             const skill = skills.find(s=>s.id===id);
@@ -229,17 +230,29 @@
                             assignRow(prereqSkill, nextRow);
                         }
                     }
-                    const baseRow = rows[primary] !== undefined ? rows[primary] : nextRow;
+
+                    const primaryRow = rows[primary] !== undefined ? rows[primary] : nextRow;
+                    let currentRow = Math.max(nextRow, primaryRow + 1);
+
                     grouped[primary]
                         .sort((a,b)=>a.name.localeCompare(b.name))
-                        .forEach(skill=>{
-                            assignRow(skill, baseRow);
+                        .forEach((skill, index)=>{
+                            const multiPrereq = Array.isArray(skill.prereqs) && skill.prereqs.length > 1;
+                            const desiredRow = (index === 0 && !multiPrereq) ? currentRow : Math.max(currentRow, nextRow);
+                            assignRow(skill, desiredRow);
+                            currentRow = rows[skill.id] + 1;
+                            nextRow = Math.max(nextRow, currentRow);
                         });
+
+                    nextRow = Math.max(nextRow, currentRow + blockSpacing);
                 });
 
             noPrereqs
                 .sort((a,b)=>a.name.localeCompare(b.name))
-                .forEach(skill=>assignRow(skill, nextRow));
+                .forEach(skill=>{
+                    assignRow(skill, nextRow);
+                    nextRow = Math.max(nextRow, rows[skill.id] + 1 + blockSpacing);
+                });
         }
 
         skills.forEach(skill=>{
