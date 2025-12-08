@@ -197,6 +197,10 @@
                 showMessage(`Schopnost ${skill.name} nelze odebrat, jelikož je předpokladem pro ${dependantNames}`);
                 return;
             }
+            if(!maintainsTierRequirementsAfterRemoval(skill)){
+                showMessage(data.i18n.tierRemovalBlocked);
+                return;
+            }
             delete selectedSkills[id];
         } else {
             selectedSkills[id] = true;
@@ -204,6 +208,31 @@
         renderPointSummary();
         updateSkillStates();
         drawLines();
+    }
+
+    function maintainsTierRequirementsAfterRemoval(skill){
+        const tree = data.trees.find(t=>t.id===skill.tree);
+        if(!tree) return true;
+        const reqs = tree.tier_requirements || {};
+        const excluded = skill.instance.toString();
+        const spent = {1:0,2:0,3:0,4:0};
+
+        Object.keys(selectedSkills).forEach(id=>{
+            if(id === excluded) return;
+            const s = findSkillByInstance(id);
+            if(s && s.tree === skill.tree){
+                spent[s.tier] = (spent[s.tier]||0) + parseFloat(s.cost||0);
+            }
+        });
+
+        return data.skills
+            .filter(s=>s.tree === skill.tree && selectedSkills[s.instance] && s.instance.toString() !== excluded)
+            .every(s=>{
+                if(s.tier <= 1) return true;
+                const requiredPoints = parseFloat(reqs[s.tier-1] || 0);
+                if(requiredPoints <= 0) return true;
+                return spent[s.tier-1] >= requiredPoints;
+            });
     }
 
     function getSelectedDependants(skill){

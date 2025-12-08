@@ -258,6 +258,7 @@ class RPG_Skill_Trees {
                 'saved' => __('Build saved', 'rpg-skill-trees'),
                 'loginRequired' => __('You must be logged in to save builds.', 'rpg-skill-trees'),
                 'treeRequired' => __('Select the related tree first.', 'rpg-skill-trees'),
+                'tierRemovalBlocked' => __('Removing this skill would break tier requirements for selected higher tiers.', 'rpg-skill-trees'),
             ],
         ];
     }
