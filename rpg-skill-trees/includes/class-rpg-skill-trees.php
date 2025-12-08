@@ -72,6 +72,7 @@ class RPG_Skill_Trees {
         $cost = get_post_meta($post->ID, '_rpg_cost', true);
         $icon = get_post_meta($post->ID, '_rpg_icon', true);
         $tooltip = get_post_meta($post->ID, '_rpg_tooltip', true);
+        $effect = get_post_meta($post->ID, '_rpg_effect', true);
         $prereqs = (array) get_post_meta($post->ID, '_rpg_prereqs', true);
 
         $trees = get_posts(['post_type' => 'rpg_skill_tree', 'numberposts' => -1]);
@@ -96,6 +97,9 @@ class RPG_Skill_Trees {
 
         echo '<p><label>' . esc_html__('Tooltip', 'rpg-skill-trees') . '</label><br />';
         echo '<input type="text" class="widefat" name="rpg_tooltip" value="' . esc_attr($tooltip) . '" /></p>';
+
+        echo '<p><label>' . esc_html__('Effect', 'rpg-skill-trees') . '</label><br />';
+        echo '<input type="text" class="widefat" name="rpg_effect" value="' . esc_attr($effect) . '" /></p>';
 
         echo '<p><label>' . esc_html__('Prerequisite Skills', 'rpg-skill-trees') . '</label><br />';
         echo '<select name="rpg_prereqs[]" multiple size="5" class="widefat">';
@@ -126,6 +130,7 @@ class RPG_Skill_Trees {
             $cost = isset($_POST['rpg_cost']) ? floatval($_POST['rpg_cost']) : 1;
             $icon = isset($_POST['rpg_icon']) ? esc_url_raw($_POST['rpg_icon']) : '';
             $tooltip = isset($_POST['rpg_tooltip']) ? wp_kses_post($_POST['rpg_tooltip']) : '';
+            $effect = isset($_POST['rpg_effect']) ? wp_kses_post($_POST['rpg_effect']) : '';
             $prereqs = isset($_POST['rpg_prereqs']) ? array_map('intval', (array) $_POST['rpg_prereqs']) : [];
 
             update_post_meta($post_id, '_rpg_trees', $trees);
@@ -136,6 +141,7 @@ class RPG_Skill_Trees {
             update_post_meta($post_id, '_rpg_cost', max(0, $cost));
             update_post_meta($post_id, '_rpg_icon', $icon);
             update_post_meta($post_id, '_rpg_tooltip', $tooltip);
+            update_post_meta($post_id, '_rpg_effect', $effect);
             update_post_meta($post_id, '_rpg_prereqs', $prereqs);
         }
     }
@@ -240,6 +246,7 @@ class RPG_Skill_Trees {
                     'cost' => floatval(get_post_meta($skill->ID, '_rpg_cost', true)),
                     'icon' => esc_url(get_post_meta($skill->ID, '_rpg_icon', true)),
                     'tooltip' => wp_kses_post(get_post_meta($skill->ID, '_rpg_tooltip', true)),
+                    'effect' => wp_kses_post(get_post_meta($skill->ID, '_rpg_effect', true)),
                     'prereqs' => (array) get_post_meta($skill->ID, '_rpg_prereqs', true),
                 ];
             }

@@ -3,7 +3,7 @@
  * Plugin Name: RPG Skill Trees
  * Description: Create RPG-style skill trees with tier rules, prerequisites, and build saving.
  * Version: 1.0.0
- * Author: OpenAI Codex
+ * Author: Quill
  * Text Domain: rpg-skill-trees
  */
 
