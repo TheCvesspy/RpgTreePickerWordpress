@@ -347,12 +347,21 @@
         return (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===parseInt(fromTier,10) && parseInt(r.to,10)===parseInt(toTier,10));
     }
 
-    function convertPoints(amount, fromTier, toTier){
-        if(fromTier === toTier) return amount;
-        if(Math.abs(fromTier - toTier) !== 1) return 0;
-        const rule = findConversionRule(fromTier, toTier);
-        if(!rule) return 0;
-        return amount * parseFloat(rule.ratio||0);
+    function fractionFromRatio(ratio){
+        const decimals = (ratio.toString().split('.')[1] || '').length;
+        const denominator = Math.pow(10, decimals);
+        const numerator = Math.round(ratio * denominator);
+        const gcd = (a, b) => b ? gcd(b, a % b) : Math.abs(a);
+        const divisor = gcd(numerator, denominator) || 1;
+        return { numerator: numerator / divisor, denominator: denominator / divisor };
+    }
+
+    function getConversionStep(rule){
+        const ratio = parseFloat(rule?.ratio || 0);
+        if(!ratio || Number.isNaN(ratio)) return { amount: 0, received: 0 };
+        if(Number.isInteger(ratio)) return { amount: 1, received: ratio };
+        const { numerator, denominator } = fractionFromRatio(ratio);
+        return { amount: denominator, received: numerator };
     }
 
     function hasPointsForSkill(skill){
@@ -431,16 +440,16 @@
             item.append(label).append(values);
 
             const controls = $('<div class="rpg-point-actions"></div>');
-            const upRule = t < 4 ? findConversionRule(t+1, t) : null;
+            const upRule = t > 1 ? findConversionRule(t, t-1) : null;
             if(upRule){
-                const upBtn = $('<button type="button" class="rpg-convert-btn" title="'+dataLabel('Tier')+' '+(t+1)+' → '+dataLabel('Tier')+' '+t+'">↑</button>');
-                upBtn.on('click', ()=>applyQuickConversion(t+1, t));
+                const upBtn = $('<button type="button" class="rpg-convert-btn" title="'+dataLabel('Tier')+' '+t+' → '+dataLabel('Tier')+' '+(t-1)+'">↑</button>');
+                upBtn.on('click', ()=>applyQuickConversion(t, t-1));
                 controls.append(upBtn);
             }
-            const downRule = t > 1 ? findConversionRule(t, t-1) : null;
+            const downRule = t < 4 ? findConversionRule(t, t+1) : null;
             if(downRule){
-                const downBtn = $('<button type="button" class="rpg-convert-btn" title="'+dataLabel('Tier')+' '+t+' → '+dataLabel('Tier')+' '+(t-1)+'">↓</button>');
-                downBtn.on('click', ()=>applyQuickConversion(t, t-1));
+                const downBtn = $('<button type="button" class="rpg-convert-btn" title="'+dataLabel('Tier')+' '+t+' → '+dataLabel('Tier')+' '+(t+1)+'">↓</button>');
+                downBtn.on('click', ()=>applyQuickConversion(t, t+1));
                 controls.append(downBtn);
             }
             if(controls.children().length){
@@ -462,14 +471,17 @@
             showMessage('Conversion not allowed for those tiers.');
             return;
         }
-        const amount = 1;
+        const { amount, received } = getConversionStep(rule);
+        if(!amount || !received){
+            showMessage('Conversion not allowed for those tiers.');
+            return;
+        }
         const {totals, spent} = calculatePoints();
         const available = (totals[fromTier]||0) - (spent[fromTier]||0);
         if(amount > available){
             showMessage('Not enough points to convert from Tier '+fromTier+'.');
             return;
         }
-        const received = amount * parseFloat(rule.ratio||0);
         userConversions.push({from: fromTier, to: toTier, amount, received});
         renderPointSummary();
         updateSkillStates();
