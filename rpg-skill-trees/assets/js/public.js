@@ -133,65 +133,95 @@
         updateSkillStates();
     }
 
-    // Determine rows so connected skills align horizontally. If multiple prerequisites exist
-    // the dependent skill takes the row of the first prerequisite, and subsequent prerequisites
-    // are pushed to rows beneath that primary requirement.
+    // Determine rows so connected skills align horizontally while keeping a consistent vertical gap
+    // between cards. Skills inherit the row of their primary prerequisite when possible; siblings
+    // sharing a prerequisite are stacked underneath in alphabetical order.
+    function getSkillRowHeight(){
+        if(getSkillRowHeight.cached){
+            return getSkillRowHeight.cached;
+        }
+
+        const gap = 7;
+        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:200px; padding:12px;"></div>');
+        const probeSkill = $('<div class="rpg-skill"><div class="rpg-skill-name">Sample</div><div class="rpg-skill-tooltip">Sample tooltip</div><div class="rpg-skill-cost">0 pt</div></div>');
+        probeTier.append(probeSkill);
+        $('body').append(probeTier);
+        const measuredHeight = probeSkill.outerHeight();
+        probeTier.remove();
+        getSkillRowHeight.cached = measuredHeight + gap;
+        return getSkillRowHeight.cached;
+    }
+
     function calculateLayoutForTree(treeId){
         const skills = data.skills.filter(s=>s.tree===treeId);
         const rows = {};
+        const rowHeight = getSkillRowHeight();
         let nextRow = 0;
-        const rowHeight = 120;
-        const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier).sort((a,b)=>a.name.localeCompare(b.name));
-        const usedRows = new Set();
+        const rowUsage = {};
+        const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier);
+        const getName = id => {
+            const skill = skills.find(s=>s.id===id);
+            return skill ? skill.name : '';
+        };
 
-        // seed tier 1
-        tierSkills(1).forEach(skill=>{
-            while(usedRows.has(nextRow)) nextRow++;
-            rows[skill.id] = nextRow;
-            usedRows.add(nextRow);
-            nextRow++;
-        });
+        const isRowUsedInTier = (row, tier) => rowUsage[row] && rowUsage[row].has(tier);
+        const reserveRow = (row, tier) => {
+            if(!rowUsage[row]) rowUsage[row] = new Set();
+            rowUsage[row].add(tier);
+            nextRow = Math.max(nextRow, row + 1);
+        };
+        const assignRow = (skill, desiredRow) => {
+            let row = desiredRow;
+            while(isRowUsedInTier(row, skill.tier)){
+                row++;
+            }
+            rows[skill.id] = row;
+            reserveRow(row, skill.tier);
+        };
+
+        tierSkills(1)
+            .sort((a,b)=>a.name.localeCompare(b.name))
+            .forEach(skill=>assignRow(skill, nextRow));
 
         for(let tier=2;tier<=4;tier++){
-            const sharedPrereqRows = {};
+            const grouped = {};
+            const noPrereqs = [];
+
             tierSkills(tier).forEach(skill=>{
                 if(skill.prereqs && skill.prereqs.length){
-                    const primary = skill.prereqs[0];
-                    const primaryRow = rows[primary] !== undefined ? rows[primary] : (rows[primary] = nextRow++);
-                    usedRows.add(primaryRow);
-                    const offset = sharedPrereqRows[primaryRow] || 0;
-                    let targetRow = primaryRow + offset;
-                    while(usedRows.has(targetRow)){
-                        targetRow++;
-                    }
-                    rows[skill.id] = targetRow;
-                    sharedPrereqRows[primaryRow] = (targetRow - primaryRow) + 1;
-                    usedRows.add(targetRow);
-                    nextRow = Math.max(nextRow, targetRow + 1);
-                    skill.prereqs.slice(1).forEach(pr=>{
-                        if(rows[pr] === undefined){
-                            while(usedRows.has(nextRow)) nextRow++;
-                            rows[pr] = nextRow;
-                            usedRows.add(nextRow);
-                            nextRow++;
-                        }
-                    });
+                    const primary = [...skill.prereqs].sort((a,b)=>getName(a).localeCompare(getName(b)))[0];
+                    if(!grouped[primary]) grouped[primary] = [];
+                    grouped[primary].push(skill);
                 } else {
-                    while(usedRows.has(nextRow)) nextRow++;
-                    rows[skill.id] = nextRow;
-                    usedRows.add(nextRow);
-                    nextRow++;
+                    noPrereqs.push(skill);
                 }
             });
+
+            Object.keys(grouped)
+                .sort((a,b)=>getName(a).localeCompare(getName(b)))
+                .forEach(primary=>{
+                    if(rows[primary] === undefined){
+                        const prereqSkill = skills.find(s=>s.id===parseInt(primary,10));
+                        if(prereqSkill){
+                            assignRow(prereqSkill, nextRow);
+                        }
+                    }
+                    const baseRow = rows[primary] !== undefined ? rows[primary] : nextRow;
+                    grouped[primary]
+                        .sort((a,b)=>a.name.localeCompare(b.name))
+                        .forEach(skill=>{
+                            assignRow(skill, baseRow);
+                        });
+                });
+
+            noPrereqs
+                .sort((a,b)=>a.name.localeCompare(b.name))
+                .forEach(skill=>assignRow(skill, nextRow));
         }
 
-        // ensure all skills have a row
         skills.forEach(skill=>{
             if(rows[skill.id] === undefined){
-                while(usedRows.has(nextRow)) nextRow++;
-                rows[skill.id] = nextRow;
-                usedRows.add(nextRow);
-                nextRow++;
+                assignRow(skill, nextRow);
             }
         });
 
