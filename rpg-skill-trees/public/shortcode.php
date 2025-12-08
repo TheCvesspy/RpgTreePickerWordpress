@@ -17,6 +17,9 @@ $settings = (new RPG_Skill_Trees())->get_settings();
             </label>
         </div>
         <div class="rpg-builder-messages" id="rpg-builder-messages"></div>
+        <div class="rpg-export">
+            <button class="button rpg-export-png" type="button"><?php esc_html_e('Exportovat jako PNG', 'rpg-skill-trees'); ?></button>
+        </div>
     </div>
     <div class="rpg-builder-body" id="rpg-builder-body"></div>
     <svg class="rpg-prereq-lines" id="rpg-prereq-lines"></svg>
