@@ -6,6 +6,7 @@
     let showRules = false;
     let hoverTooltip;
     let svg;
+    let html2CanvasPromise;
 
     function findSkillByInstance(instanceId){
         return data.skills.find(s=>s.instance === instanceId);
@@ -180,8 +181,8 @@
                 tierColumn.append('<div class="rpg-tier-title">'+dataLabel('Tier')+' '+tier+'</div>');
                 const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"></div>');
                 const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
-                const paddingOffset = 12;
-                const paddingBottom = 12;
+                const paddingOffset = 10;
+                const paddingBottom = 10;
                 tierCol.css('min-height', (layout.totalRows * layout.rowHeight + paddingOffset + paddingBottom)+'px');
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
@@ -223,7 +224,7 @@
             return rowHeightCache[treeId];
         }
 
-        const gap = 12; // ensures at least 10px spacing between card edges
+        const gap = 10; // ensures at least 8px spacing between card edges while staying compact
         const skills = data.skills.filter(s=>s.tree===treeId);
         const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:220px; padding:12px;"></div>');
         $('body').append(probeTier);
@@ -573,6 +574,46 @@
         return skill ? skill.name : '';
     }
 
+    function loadHtml2Canvas(){
+        if(window.html2canvas){
+            return Promise.resolve(window.html2canvas);
+        }
+        if(html2CanvasPromise){
+            return html2CanvasPromise;
+        }
+        html2CanvasPromise = new Promise((resolve, reject)=>{
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+            script.onload = ()=> resolve(window.html2canvas);
+            script.onerror = ()=> reject(new Error('html2canvas failed to load'));
+            document.head.appendChild(script);
+        });
+        return html2CanvasPromise;
+    }
+
+    async function exportAsPng(){
+        const container = document.querySelector('.rpg-skill-trees-builder');
+        if(!container){
+            return;
+        }
+        const button = $('.rpg-export-png');
+        const originalText = button.text();
+        button.prop('disabled', true).text('Exportuje...');
+        try {
+            const html2canvas = await loadHtml2Canvas();
+            const canvas = await html2canvas(container, { backgroundColor: '#0b1021', useCORS: true, scale: 2 });
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'skill-tree.png';
+            link.click();
+        } catch(err){
+            console.error(err);
+            showMessage((data.i18n && data.i18n.exportError) ? data.i18n.exportError : 'Export se nezdařil.');
+        } finally {
+            button.prop('disabled', false).text(originalText);
+        }
+    }
+
     function bindActions(){
         $('.rpg-reset-build').on('click', function(){
             selectedSkills = {};
@@ -585,6 +626,8 @@
             clearRowHeightCache();
             renderBuilder();
         });
+
+        $('.rpg-export-png').on('click', exportAsPng);
     }
 
     function drawLines(){
