@@ -84,6 +84,20 @@
         return grouped;
     }
 
+    function buildSkillNode(skill){
+        const skillNode = $('<div class="rpg-skill" data-instance="'+skill.instance+'" data-id="'+skill.id+'" data-tree="'+skill.tree+'" data-tier="'+skill.tier+'"></div>');
+        if(skill.icon){
+            skillNode.append('<div class="rpg-skill-icon"><img src="'+skill.icon+'" alt="" /></div>');
+        }
+        skillNode.append('<div class="rpg-skill-name">'+skill.name+'</div>');
+        skillNode.append('<div class="rpg-skill-tooltip">'+skill.tooltip+'</div>');
+        skillNode.append('<div class="rpg-skill-cost">'+skill.cost+' pt</div>');
+        if(skill.prereqs && skill.prereqs.length){
+            skillNode.append('<div class="rpg-skill-prereqs" data-prereqs="'+skill.prereqs.join(',')+'">'+data.i18n.requiresSkills+skill.prereqs.map(id=>getSkillName(id)).join(', ')+'</div>');
+        }
+        return skillNode;
+    }
+
     function renderBuilder(){
         const body = $('#rpg-builder-body');
         body.empty();
@@ -106,16 +120,7 @@
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
                 skills.forEach(skill=>{
-                    const skillNode = $('<div class="rpg-skill" data-instance="'+skill.instance+'" data-id="'+skill.id+'" data-tree="'+treeId+'" data-tier="'+skill.tier+'"></div>');
-                    if(skill.icon){
-                        skillNode.append('<div class="rpg-skill-icon"><img src="'+skill.icon+'" alt="" /></div>');
-                    }
-                    skillNode.append('<div class="rpg-skill-name">'+skill.name+'</div>');
-                    skillNode.append('<div class="rpg-skill-tooltip">'+skill.tooltip+'</div>');
-                    skillNode.append('<div class="rpg-skill-cost">'+skill.cost+' pt</div>');
-                    if(skill.prereqs && skill.prereqs.length){
-                        skillNode.append('<div class="rpg-skill-prereqs" data-prereqs="'+skill.prereqs.join(',')+'">'+data.i18n.requiresSkills+skill.prereqs.map(id=>getSkillName(id)).join(', ')+'</div>');
-                    }
+                    const skillNode = buildSkillNode(skill);
                     const row = layout.rows[skill.id] || 0;
                     const top = paddingOffset + (row * layout.rowHeight);
                     skillNode.css('top', top + 'px');
@@ -136,26 +141,44 @@
     // Determine rows so connected skills align horizontally while keeping a consistent vertical gap
     // between cards. Skills inherit the row of their primary prerequisite when possible; siblings
     // sharing a prerequisite are stacked underneath in alphabetical order.
-    function getSkillRowHeight(){
-        if(getSkillRowHeight.cached){
-            return getSkillRowHeight.cached;
+    const rowHeightCache = {};
+
+    function getSkillRowHeight(treeId){
+        if(rowHeightCache[treeId]){
+            return rowHeightCache[treeId];
         }
 
-        const gap = 7;
-        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:200px; padding:12px;"></div>');
-        const probeSkill = $('<div class="rpg-skill"><div class="rpg-skill-name">Sample</div><div class="rpg-skill-tooltip">Sample tooltip</div><div class="rpg-skill-cost">0 pt</div></div>');
-        probeTier.append(probeSkill);
+        const gap = 12; // ensures at least 10px spacing between card edges
+        const skills = data.skills.filter(s=>s.tree===treeId);
+        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:220px; padding:12px;"></div>');
         $('body').append(probeTier);
-        const measuredHeight = probeSkill.outerHeight();
+
+        let maxHeight = 0;
+        skills.forEach(skill=>{
+            const node = buildSkillNode(skill);
+            node.css({position:'relative', left:'auto', right:'auto', top:'auto'});
+            probeTier.append(node);
+            maxHeight = Math.max(maxHeight, node.outerHeight(true));
+            node.remove();
+        });
+
+        // If no skills exist, fall back to a minimal height so the UI remains stable
+        if(maxHeight === 0){
+            const fallback = $('<div class="rpg-skill" style="position:relative; left:auto; right:auto; top:auto;">&nbsp;</div>');
+            probeTier.append(fallback);
+            maxHeight = fallback.outerHeight(true);
+            fallback.remove();
+        }
+
         probeTier.remove();
-        getSkillRowHeight.cached = measuredHeight + gap;
-        return getSkillRowHeight.cached;
+        rowHeightCache[treeId] = maxHeight + gap;
+        return rowHeightCache[treeId];
     }
 
     function calculateLayoutForTree(treeId){
         const skills = data.skills.filter(s=>s.tree===treeId);
         const rows = {};
-        const rowHeight = getSkillRowHeight();
+        const rowHeight = getSkillRowHeight(treeId);
         let nextRow = 0;
         const rowUsage = {};
         const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier);
