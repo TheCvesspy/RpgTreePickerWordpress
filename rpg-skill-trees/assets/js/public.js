@@ -108,15 +108,27 @@
         return grouped;
     }
 
+    function buildTooltipContent(skill){
+        const parts = [];
+        if(skill.tooltip){
+            parts.push('<div class="rpg-tooltip-line">'+skill.tooltip+'</div>');
+        }
+        if(skill.effect){
+            parts.push('<div class="rpg-tooltip-effect">'+skill.effect+'</div>');
+        }
+        return parts.join('');
+    }
+
     function buildSkillNode(skill){
         const skillNode = $('<div class="rpg-skill" data-instance="'+skill.instance+'" data-id="'+skill.id+'" data-tree="'+skill.tree+'" data-tier="'+skill.tier+'"></div>');
-        skillNode.data('tooltip', skill.tooltip || '');
+        const tooltipContent = buildTooltipContent(skill);
+        skillNode.data('tooltip', tooltipContent);
         if(skill.icon){
             skillNode.append('<div class="rpg-skill-icon"><img src="'+skill.icon+'" alt="" /></div>');
         }
         skillNode.append('<div class="rpg-skill-name">'+skill.name+'</div>');
-        if(showRules && skill.tooltip){
-            skillNode.append('<div class="rpg-skill-tooltip">'+skill.tooltip+'</div>');
+        if(showRules && tooltipContent){
+            skillNode.append('<div class="rpg-skill-tooltip">'+tooltipContent+'</div>');
         }
         if(skill.prereqs && skill.prereqs.length){
             skillNode.append('<div class="rpg-skill-prereqs" data-prereqs="'+skill.prereqs.join(',')+'">'+data.i18n.requiresSkills+skill.prereqs.map(id=>getSkillName(id)).join(', ')+'</div>');
@@ -178,9 +190,11 @@
                     const row = layout.rows[skill.id] || 0;
                     const top = paddingOffset + (row * layout.rowHeight);
                     skillNode.css('top', top + 'px');
-                    skillNode.on('mouseenter', event => showHoverTooltip(skill.tooltip, event));
-                    skillNode.on('mousemove', positionHoverTooltip);
-                    skillNode.on('mouseleave', hideHoverTooltip);
+                    if(skillNode.data('tooltip')){
+                        skillNode.on('mouseenter', event => showHoverTooltip(skillNode.data('tooltip'), event));
+                        skillNode.on('mousemove', positionHoverTooltip);
+                        skillNode.on('mouseleave', hideHoverTooltip);
+                    }
                     skillNode.on('click', ()=>toggleSkill(skill));
                     tierCol.append(skillNode);
                 });
