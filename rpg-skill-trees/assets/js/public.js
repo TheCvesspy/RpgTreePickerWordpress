@@ -2,6 +2,7 @@
     const data = window.RPGSkillTreesData || {};
     let selectedTrees = [];
     let selectedSkills = {};
+    let userConversions = [];
     let svg;
 
     function findSkillByInstance(instanceId){
@@ -323,7 +324,12 @@
     }
 
     function calculatePoints(){
-        const totals = {1: data.settings.tier_points[1] || 0, 2: data.settings.tier_points[2] || 0, 3: data.settings.tier_points[3] || 0, 4: data.settings.tier_points[4] || 0};
+        const baseTotals = {1: parseFloat(data.settings.tier_points[1] || 0), 2: parseFloat(data.settings.tier_points[2] || 0), 3: parseFloat(data.settings.tier_points[3] || 0), 4: parseFloat(data.settings.tier_points[4] || 0)};
+        const totals = {...baseTotals};
+        userConversions.forEach(conv=>{
+            totals[conv.from] = (totals[conv.from]||0) - conv.amount;
+            totals[conv.to] = (totals[conv.to]||0) + conv.received;
+        });
         const spent = {1:0,2:0,3:0,4:0};
         Object.keys(selectedSkills).forEach(id=>{
             const skill = findSkillByInstance(id);
@@ -331,7 +337,7 @@
                 spent[skill.tier] = (spent[skill.tier]||0) + parseFloat(skill.cost||0);
             }
         });
-        return {totals, spent};
+        return {baseTotals, totals, spent};
     }
 
     function convertPoints(amount, fromTier, toTier){
@@ -344,17 +350,7 @@
     function hasPointsForSkill(skill){
         const {totals, spent} = calculatePoints();
         const available = totals[skill.tier] - spent[skill.tier];
-        if(available >= skill.cost) return true;
-        // attempt conversions from other tiers
-        let effective = available;
-        for(let t=1;t<=4;t++){
-            if(t===skill.tier) continue;
-            const diff = totals[t] - spent[t];
-            if(diff>0){
-                effective += convertPoints(diff, t, skill.tier);
-            }
-        }
-        return effective >= skill.cost;
+        return available >= skill.cost;
     }
 
     function tierRequirementMet(skill){
@@ -414,13 +410,101 @@
     function renderPointSummary(){
         const summary = $('#rpg-point-summary');
         summary.empty();
-        const {totals, spent} = calculatePoints();
+        const {baseTotals, totals, spent} = calculatePoints();
         const list = $('<ul class="rpg-point-list"></ul>');
         for(let t=1;t<=4;t++){
-            list.append('<li>Tier '+t+': '+spent[t]+'/'+totals[t]+'</li>');
+            const delta = totals[t] - baseTotals[t];
+            const deltaText = delta !== 0 ? ' ('+(delta>0?'+':'')+delta+' via conversions)' : '';
+            list.append('<li>Tier '+t+': '+spent[t]+'/'+totals[t]+deltaText+'</li>');
         }
         summary.append('<h3>Points</h3>');
         summary.append(list);
+        renderConversionControls(summary);
+    }
+
+    function renderConversionControls(summary){
+        const rules = data.settings.conversions || [];
+        const box = $('<div class="rpg-conversion-panel"></div>');
+        box.append('<h4>Convert Points</h4>');
+        if(!rules.length){
+            box.append('<p class="rpg-conversion-empty">No conversion rules configured.</p>');
+            summary.append(box);
+            return;
+        }
+        const fromSelect = $('<select class="rpg-convert-from"></select>');
+        const toSelect = $('<select class="rpg-convert-to"></select>');
+        rules.forEach(rule=>{
+            fromSelect.append('<option value="'+rule.from+'">Tier '+rule.from+'</option>');
+            toSelect.append('<option value="'+rule.to+'">Tier '+rule.to+'</option>');
+        });
+        const amountInput = $('<input type="number" min="1" step="1" class="rpg-convert-amount" />');
+        amountInput.val(1);
+        const ratioNote = $('<div class="rpg-convert-ratio"></div>');
+        const updateRatioText = ()=>{
+            const fromVal = parseInt(fromSelect.val(),10);
+            const toVal = parseInt(toSelect.val(),10);
+            const rule = (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===fromVal && parseInt(r.to,10)===toVal);
+            if(rule){
+                ratioNote.text('Ratio: 1 → '+parseFloat(rule.ratio||0));
+            } else {
+                ratioNote.text('No conversion available for that pair.');
+            }
+        };
+        fromSelect.on('change', updateRatioText);
+        toSelect.on('change', updateRatioText);
+        updateRatioText();
+
+        const convertBtn = $('<button type="button" class="button rpg-convert-apply">Convert</button>');
+        convertBtn.on('click', function(){
+            const fromTier = parseInt(fromSelect.val(),10);
+            const toTier = parseInt(toSelect.val(),10);
+            const amount = parseInt(amountInput.val(),10);
+            const rule = (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===fromTier && parseInt(r.to,10)===toTier);
+            if(!Number.isInteger(amount) || amount <= 0){
+                showMessage('Enter a whole number of points to convert.');
+                return;
+            }
+            if(!rule){
+                showMessage('Conversion not allowed for those tiers.');
+                return;
+            }
+            const {totals, spent} = calculatePoints();
+            const available = (totals[fromTier]||0) - (spent[fromTier]||0);
+            if(amount > available){
+                showMessage('Not enough points to convert from Tier '+fromTier+'.');
+                return;
+            }
+            const received = amount * parseFloat(rule.ratio||0);
+            userConversions.push({from: fromTier, to: toTier, amount, received});
+            renderPointSummary();
+            updateSkillStates();
+        });
+
+        const form = $('<div class="rpg-conversion-form"></div>');
+        form.append('<label>From </label>').append(fromSelect);
+        form.append('<label>To </label>').append(toSelect);
+        form.append('<label>Amount </label>').append(amountInput);
+        form.append(convertBtn);
+        form.append(ratioNote);
+        box.append(form);
+
+        const history = $('<div class="rpg-conversion-history"></div>');
+        if(userConversions.length){
+            userConversions.forEach((conv, idx)=>{
+                const item = $('<div class="rpg-conversion-entry"></div>');
+                item.append('<span>Tier '+conv.from+' -'+conv.amount+' → Tier '+conv.to+' +'+conv.received+'</span>');
+                const undoBtn = $('<button type="button" class="button button-small">Undo</button>');
+                undoBtn.on('click', function(){
+                    userConversions.splice(idx,1);
+                    renderPointSummary();
+                    updateSkillStates();
+                });
+                item.append(undoBtn);
+                history.append(item);
+            });
+        }
+        box.append(history);
+        summary.append(box);
     }
 
     function showMessage(msg){
@@ -436,30 +520,9 @@
     }
 
     function bindActions(){
-        $('.rpg-save-build').on('click', function(){
-            if(data.settings.require_login && !data.currentUser){
-                showMessage(data.i18n.loginRequired);
-                return;
-            }
-            $.post(data.ajaxUrl, {action:'rpg_skill_trees_save_build', nonce:data.nonce, build: JSON.stringify({trees:selectedTrees, skills:selectedSkills})}, function(resp){
-                if(resp.success){
-                    showMessage(data.i18n.saved);
-                }
-            });
-        });
-        $('.rpg-load-build').on('click', function(){
-            $.post(data.ajaxUrl, {action:'rpg_skill_trees_load_build', nonce:data.nonce}, function(resp){
-                if(resp.success && resp.data){
-                    selectedTrees = resp.data.trees || [];
-                    selectedSkills = normalizeLoadedSkills(resp.data.skills || {});
-                    $('#rpg-tree-list input').prop('checked', false);
-                    selectedTrees.forEach(id=>{ $('#rpg-tree-list input[value="'+id+'"]').prop('checked', true); });
-                    renderBuilder();
-                }
-            });
-        });
         $('.rpg-reset-build').on('click', function(){
             selectedSkills = {};
+            userConversions = [];
             renderBuilder();
         });
     }
