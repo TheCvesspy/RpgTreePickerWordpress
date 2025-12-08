@@ -1,3 +1,28 @@
 #rpg-conversion-table input {
     width: 80px;
 }
+
+.rpg-checkbox-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    align-items: flex-start;
+}
+
+.rpg-checkbox-columns {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.rpg-checkbox-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rpg-checkbox-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
