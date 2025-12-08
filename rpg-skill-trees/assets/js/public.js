@@ -92,7 +92,6 @@
         }
         skillNode.append('<div class="rpg-skill-name">'+skill.name+'</div>');
         skillNode.append('<div class="rpg-skill-tooltip">'+skill.tooltip+'</div>');
-        skillNode.append('<div class="rpg-skill-cost">'+skill.cost+' pt</div>');
         if(skill.prereqs && skill.prereqs.length){
             skillNode.append('<div class="rpg-skill-prereqs" data-prereqs="'+skill.prereqs.join(',')+'">'+data.i18n.requiresSkills+skill.prereqs.map(id=>getSkillName(id)).join(', ')+'</div>');
         }
@@ -260,7 +259,11 @@
     }
 
     function dataLabel(base){
-        return base;
+        const map = {
+            'Points': 'Body',
+            'Tier': 'Úroveň',
+        };
+        return map[base] || base;
     }
 
     function toggleSkill(skill){
@@ -340,9 +343,14 @@
         return {baseTotals, totals, spent};
     }
 
+    function findConversionRule(fromTier, toTier){
+        return (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===parseInt(fromTier,10) && parseInt(r.to,10)===parseInt(toTier,10));
+    }
+
     function convertPoints(amount, fromTier, toTier){
         if(fromTier === toTier) return amount;
-        const rule = (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===parseInt(fromTier,10) && parseInt(r.to,10)===parseInt(toTier,10));
+        if(Math.abs(fromTier - toTier) !== 1) return 0;
+        const rule = findConversionRule(fromTier, toTier);
         if(!rule) return 0;
         return amount * parseFloat(rule.ratio||0);
     }
@@ -411,88 +419,68 @@
         const summary = $('#rpg-point-summary');
         summary.empty();
         const {baseTotals, totals, spent} = calculatePoints();
-        const list = $('<ul class="rpg-point-list"></ul>');
+        summary.append('<h3>'+dataLabel('Points')+'</h3>');
+
+        const list = $('<div class="rpg-point-list"></div>');
         for(let t=1;t<=4;t++){
             const delta = totals[t] - baseTotals[t];
-            const deltaText = delta !== 0 ? ' ('+(delta>0?'+':'')+delta+' via conversions)' : '';
-            list.append('<li>Tier '+t+': '+spent[t]+'/'+totals[t]+deltaText+'</li>');
+            const deltaText = delta !== 0 ? ' ('+(delta>0?'+':'')+delta+')' : '';
+            const item = $('<div class="rpg-point-row" data-tier="'+t+'"></div>');
+            const label = $('<div class="rpg-point-label">'+dataLabel('Tier')+' '+t+'</div>');
+            const values = $('<div class="rpg-point-values">'+spent[t]+'/'+totals[t]+deltaText+'</div>');
+            item.append(label).append(values);
+
+            const controls = $('<div class="rpg-point-actions"></div>');
+            const upRule = t < 4 ? findConversionRule(t+1, t) : null;
+            if(upRule){
+                const upBtn = $('<button type="button" class="rpg-convert-btn" title="'+dataLabel('Tier')+' '+(t+1)+' → '+dataLabel('Tier')+' '+t+'">↑</button>');
+                upBtn.on('click', ()=>applyQuickConversion(t+1, t));
+                controls.append(upBtn);
+            }
+            const downRule = t > 1 ? findConversionRule(t, t-1) : null;
+            if(downRule){
+                const downBtn = $('<button type="button" class="rpg-convert-btn" title="'+dataLabel('Tier')+' '+t+' → '+dataLabel('Tier')+' '+(t-1)+'">↓</button>');
+                downBtn.on('click', ()=>applyQuickConversion(t, t-1));
+                controls.append(downBtn);
+            }
+            if(controls.children().length){
+                item.append(controls);
+            }
+            list.append(item);
         }
-        summary.append('<h3>Points</h3>');
         summary.append(list);
-        renderConversionControls(summary);
+        renderConversionHistory(summary);
     }
 
-    function renderConversionControls(summary){
-        const rules = data.settings.conversions || [];
-        const box = $('<div class="rpg-conversion-panel"></div>');
-        box.append('<h4>Convert Points</h4>');
-        if(!rules.length){
-            box.append('<p class="rpg-conversion-empty">No conversion rules configured.</p>');
-            summary.append(box);
+    function applyQuickConversion(fromTier, toTier){
+        if(Math.abs(fromTier - toTier) !== 1){
+            showMessage('Conversions are only allowed between neighboring tiers.');
             return;
         }
-        const fromSelect = $('<select class="rpg-convert-from"></select>');
-        const toSelect = $('<select class="rpg-convert-to"></select>');
-        rules.forEach(rule=>{
-            fromSelect.append('<option value="'+rule.from+'">Tier '+rule.from+'</option>');
-            toSelect.append('<option value="'+rule.to+'">Tier '+rule.to+'</option>');
-        });
-        const amountInput = $('<input type="number" min="1" step="1" class="rpg-convert-amount" />');
-        amountInput.val(1);
-        const ratioNote = $('<div class="rpg-convert-ratio"></div>');
-        const updateRatioText = ()=>{
-            const fromVal = parseInt(fromSelect.val(),10);
-            const toVal = parseInt(toSelect.val(),10);
-            const rule = (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===fromVal && parseInt(r.to,10)===toVal);
-            if(rule){
-                ratioNote.text('Ratio: 1 → '+parseFloat(rule.ratio||0));
-            } else {
-                ratioNote.text('No conversion available for that pair.');
-            }
-        };
-        fromSelect.on('change', updateRatioText);
-        toSelect.on('change', updateRatioText);
-        updateRatioText();
+        const rule = findConversionRule(fromTier, toTier);
+        if(!rule){
+            showMessage('Conversion not allowed for those tiers.');
+            return;
+        }
+        const amount = 1;
+        const {totals, spent} = calculatePoints();
+        const available = (totals[fromTier]||0) - (spent[fromTier]||0);
+        if(amount > available){
+            showMessage('Not enough points to convert from Tier '+fromTier+'.');
+            return;
+        }
+        const received = amount * parseFloat(rule.ratio||0);
+        userConversions.push({from: fromTier, to: toTier, amount, received});
+        renderPointSummary();
+        updateSkillStates();
+    }
 
-        const convertBtn = $('<button type="button" class="button rpg-convert-apply">Convert</button>');
-        convertBtn.on('click', function(){
-            const fromTier = parseInt(fromSelect.val(),10);
-            const toTier = parseInt(toSelect.val(),10);
-            const amount = parseInt(amountInput.val(),10);
-            const rule = (data.settings.conversions||[]).find(r=>parseInt(r.from,10)===fromTier && parseInt(r.to,10)===toTier);
-            if(!Number.isInteger(amount) || amount <= 0){
-                showMessage('Enter a whole number of points to convert.');
-                return;
-            }
-            if(!rule){
-                showMessage('Conversion not allowed for those tiers.');
-                return;
-            }
-            const {totals, spent} = calculatePoints();
-            const available = (totals[fromTier]||0) - (spent[fromTier]||0);
-            if(amount > available){
-                showMessage('Not enough points to convert from Tier '+fromTier+'.');
-                return;
-            }
-            const received = amount * parseFloat(rule.ratio||0);
-            userConversions.push({from: fromTier, to: toTier, amount, received});
-            renderPointSummary();
-            updateSkillStates();
-        });
-
-        const form = $('<div class="rpg-conversion-form"></div>');
-        form.append('<label>From </label>').append(fromSelect);
-        form.append('<label>To </label>').append(toSelect);
-        form.append('<label>Amount </label>').append(amountInput);
-        form.append(convertBtn);
-        form.append(ratioNote);
-        box.append(form);
-
+    function renderConversionHistory(summary){
         const history = $('<div class="rpg-conversion-history"></div>');
         if(userConversions.length){
             userConversions.forEach((conv, idx)=>{
                 const item = $('<div class="rpg-conversion-entry"></div>');
-                item.append('<span>Tier '+conv.from+' -'+conv.amount+' → Tier '+conv.to+' +'+conv.received+'</span>');
+                item.append('<span>'+dataLabel('Tier')+' '+conv.from+' -'+conv.amount+' → '+dataLabel('Tier')+' '+conv.to+' +'+conv.received+'</span>');
                 const undoBtn = $('<button type="button" class="button button-small">Undo</button>');
                 undoBtn.on('click', function(){
                     userConversions.splice(idx,1);
@@ -503,8 +491,7 @@
                 history.append(item);
             });
         }
-        box.append(history);
-        summary.append(box);
+        summary.append(history);
     }
 
     function showMessage(msg){

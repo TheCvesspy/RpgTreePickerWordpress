@@ -106,7 +106,7 @@ class Rpg_Skill_Trees_Public {
                     </div>
                 </div>
                 <div class="rst-points" role="status">
-                    <strong><?php esc_html_e('Points', 'rpg-skill-trees'); ?>:</strong>
+                    <strong><?php esc_html_e('Body', 'rpg-skill-trees'); ?>:</strong>
                     <span class="rst-points-summary"></span>
                 </div>
                 <div class="rst-actions">
@@ -127,14 +127,13 @@ class Rpg_Skill_Trees_Public {
                         <div class="rst-tree__tiers">
                             <?php for ($tier = 1; $tier <= 4; $tier++): ?>
                                 <div class="rst-tier" data-tier="<?php echo $tier; ?>">
-                                    <h4><?php printf(__('Tier %d', 'rpg-skill-trees'), $tier); ?></h4>
+                                    <h4><?php printf(__('Úroveň %d', 'rpg-skill-trees'), $tier); ?></h4>
                                     <div class="rst-tier__skills">
                                         <?php foreach ($tree['skills'] as $skill): if (intval($skill['tier']) !== $tier) continue; ?>
                                             <div class="rst-skill" data-skill-id="<?php echo esc_attr($skill['id']); ?>" data-tree-id="<?php echo esc_attr($skill['tree_id']); ?>" data-tier="<?php echo esc_attr($skill['tier']); ?>" data-cost="<?php echo esc_attr($skill['cost']); ?>" data-prereqs="<?php echo esc_attr(json_encode($skill['prerequisites'])); ?>" data-min-prev="<?php echo esc_attr($skill['min_previous']); ?>">
                                                 <?php if ($skill['icon']): ?><img src="<?php echo esc_url($skill['icon']); ?>" alt="" class="rst-skill__icon" /><?php endif; ?>
                                                 <div class="rst-skill__name"><?php echo esc_html($skill['name']); ?></div>
                                                 <div class="rst-skill__tooltip"><?php echo wp_kses_post($skill['description']); ?></div>
-                                                <div class="rst-skill__meta"><?php printf(__('Cost: %s', 'rpg-skill-trees'), esc_html($skill['cost'])); ?></div>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>
