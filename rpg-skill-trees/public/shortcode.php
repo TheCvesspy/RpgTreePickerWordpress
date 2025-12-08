@@ -11,6 +11,11 @@ $settings = (new RPG_Skill_Trees())->get_settings();
             <div class="rpg-tree-list" id="rpg-tree-list"></div>
         </div>
         <div class="rpg-point-summary" id="rpg-point-summary"></div>
+        <div class="rpg-builder-options">
+            <label class="rpg-rules-toggle">
+                <input type="checkbox" id="rpg-toggle-rules" /> <?php esc_html_e('zobrazuj pravidla schopností', 'rpg-skill-trees'); ?>
+            </label>
+        </div>
         <div class="rpg-builder-messages" id="rpg-builder-messages"></div>
     </div>
     <div class="rpg-builder-body" id="rpg-builder-body"></div>

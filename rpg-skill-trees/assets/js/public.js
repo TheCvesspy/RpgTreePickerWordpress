@@ -3,6 +3,8 @@
     let selectedTrees = [];
     let selectedSkills = {};
     let userConversions = [];
+    let showRules = false;
+    let hoverTooltip;
     let svg;
 
     function findSkillByInstance(instanceId){
@@ -46,6 +48,7 @@
     function init(){
         svg = document.getElementById('rpg-prereq-lines');
         renderTreeSelector();
+        showRules = $('#rpg-toggle-rules').is(':checked');
         renderPointSummary();
         bindActions();
     }
@@ -53,12 +56,24 @@
     function renderTreeSelector(){
         const list = $('#rpg-tree-list');
         list.empty();
+        const selectAllId = 'rpg-tree-select-all';
+        const selectAll = $('<label class="rpg-tree-option rpg-tree-select-all"><input type="checkbox" id="'+selectAllId+'"> Vyber vše</label>');
+        list.append(selectAll);
+        selectAll.find('input').on('change', function(){
+            const checked = $(this).is(':checked');
+            selectedTrees = checked ? data.trees.map(t=>t.id) : [];
+            list.find('input.rpg-tree-toggle').prop('checked', checked);
+            if(!checked){
+                selectedSkills = {};
+            }
+            renderBuilder();
+        });
         data.trees.forEach(tree => {
             const id = 'rpg-tree-'+tree.id;
-            const checkbox = $('<label class="rpg-tree-option"><input type="checkbox" value="'+tree.id+'" id="'+id+'"> '+tree.name+'</label>');
+            const checkbox = $('<label class="rpg-tree-option"><input type="checkbox" value="'+tree.id+'" id="'+id+'" class="rpg-tree-toggle"> '+tree.name+'</label>');
             list.append(checkbox);
         });
-        list.find('input').on('change', function(){
+        list.find('input.rpg-tree-toggle').on('change', function(){
             const val = parseInt($(this).val(),10);
             if($(this).is(':checked')){
                 if(!selectedTrees.includes(val)) selectedTrees.push(val);
@@ -71,8 +86,16 @@
                     }
                 });
             }
+            syncSelectAllToggle(list);
             renderBuilder();
         });
+        syncSelectAllToggle(list);
+    }
+
+    function syncSelectAllToggle(list){
+        const toggles = list.find('input.rpg-tree-toggle');
+        const allChecked = toggles.length > 0 && toggles.filter(':checked').length === toggles.length;
+        list.find('#rpg-tree-select-all').prop('checked', allChecked);
     }
 
     function groupSkillsByTree(){
@@ -87,18 +110,49 @@
 
     function buildSkillNode(skill){
         const skillNode = $('<div class="rpg-skill" data-instance="'+skill.instance+'" data-id="'+skill.id+'" data-tree="'+skill.tree+'" data-tier="'+skill.tier+'"></div>');
+        skillNode.data('tooltip', skill.tooltip || '');
         if(skill.icon){
             skillNode.append('<div class="rpg-skill-icon"><img src="'+skill.icon+'" alt="" /></div>');
         }
         skillNode.append('<div class="rpg-skill-name">'+skill.name+'</div>');
-        skillNode.append('<div class="rpg-skill-tooltip">'+skill.tooltip+'</div>');
+        if(showRules && skill.tooltip){
+            skillNode.append('<div class="rpg-skill-tooltip">'+skill.tooltip+'</div>');
+        }
         if(skill.prereqs && skill.prereqs.length){
             skillNode.append('<div class="rpg-skill-prereqs" data-prereqs="'+skill.prereqs.join(',')+'">'+data.i18n.requiresSkills+skill.prereqs.map(id=>getSkillName(id)).join(', ')+'</div>');
         }
         return skillNode;
     }
 
+    function ensureHoverTooltip(){
+        if(!hoverTooltip){
+            hoverTooltip = $('<div id="rpg-hover-tooltip" class="rpg-hover-tooltip" role="tooltip" aria-hidden="true"></div>');
+            $('body').append(hoverTooltip);
+        }
+        return hoverTooltip;
+    }
+
+    function showHoverTooltip(content, event){
+        if(!content) return;
+        const tooltip = ensureHoverTooltip();
+        tooltip.html(content).show();
+        positionHoverTooltip(event);
+    }
+
+    function positionHoverTooltip(event){
+        if(!hoverTooltip || !hoverTooltip.is(':visible')) return;
+        const offset = 12;
+        hoverTooltip.css({ left: event.pageX + offset, top: event.pageY + offset });
+    }
+
+    function hideHoverTooltip(){
+        if(hoverTooltip){
+            hoverTooltip.hide().empty();
+        }
+    }
+
     function renderBuilder(){
+        hideHoverTooltip();
         const body = $('#rpg-builder-body');
         body.empty();
         const grouped = groupSkillsByTree();
@@ -124,6 +178,9 @@
                     const row = layout.rows[skill.id] || 0;
                     const top = paddingOffset + (row * layout.rowHeight);
                     skillNode.css('top', top + 'px');
+                    skillNode.on('mouseenter', event => showHoverTooltip(skill.tooltip, event));
+                    skillNode.on('mousemove', positionHoverTooltip);
+                    skillNode.on('mouseleave', hideHoverTooltip);
                     skillNode.on('click', ()=>toggleSkill(skill));
                     tierCol.append(skillNode);
                 });
@@ -142,6 +199,10 @@
     // between cards. Skills inherit the row of their primary prerequisite when possible; siblings
     // sharing a prerequisite are stacked underneath in alphabetical order.
     const rowHeightCache = {};
+
+    function clearRowHeightCache(){
+        Object.keys(rowHeightCache).forEach(key=> delete rowHeightCache[key]);
+    }
 
     function getSkillRowHeight(treeId){
         if(rowHeightCache[treeId]){
@@ -458,7 +519,6 @@
             list.append(item);
         }
         summary.append(list);
-        renderConversionHistory(summary);
     }
 
     function applyQuickConversion(fromTier, toTier){
@@ -487,25 +547,6 @@
         updateSkillStates();
     }
 
-    function renderConversionHistory(summary){
-        const history = $('<div class="rpg-conversion-history"></div>');
-        if(userConversions.length){
-            userConversions.forEach((conv, idx)=>{
-                const item = $('<div class="rpg-conversion-entry"></div>');
-                item.append('<span>'+dataLabel('Tier')+' '+conv.from+' -'+conv.amount+' → '+dataLabel('Tier')+' '+conv.to+' +'+conv.received+'</span>');
-                const undoBtn = $('<button type="button" class="button button-small">Undo</button>');
-                undoBtn.on('click', function(){
-                    userConversions.splice(idx,1);
-                    renderPointSummary();
-                    updateSkillStates();
-                });
-                item.append(undoBtn);
-                history.append(item);
-            });
-        }
-        summary.append(history);
-    }
-
     function showMessage(msg){
         if(!msg) return;
         const container = $('#rpg-builder-messages');
@@ -522,6 +563,12 @@
         $('.rpg-reset-build').on('click', function(){
             selectedSkills = {};
             userConversions = [];
+            renderBuilder();
+        });
+
+        $('#rpg-toggle-rules').on('change', function(){
+            showRules = $(this).is(':checked');
+            clearRowHeightCache();
             renderBuilder();
         });
     }
