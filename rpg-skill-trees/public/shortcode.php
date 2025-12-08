@@ -7,7 +7,7 @@ $settings = (new RPG_Skill_Trees())->get_settings();
     </div>
     <div class="rpg-builder-header">
         <div class="rpg-tree-selector">
-            <h3><?php esc_html_e('Select Trees', 'rpg-skill-trees'); ?></h3>
+            <h3><?php esc_html_e('Vyber si strom povolání', 'rpg-skill-trees'); ?></h3>
             <div class="rpg-tree-list" id="rpg-tree-list"></div>
         </div>
         <div class="rpg-point-summary" id="rpg-point-summary"></div>
