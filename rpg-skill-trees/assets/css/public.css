@@ -1,7 +1,15 @@
 .rpg-skill-trees-builder { position: relative; border:1px solid #1f2937; padding: 18px; background:#0b1021; color:#e5e7eb; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+.rpg-reset-container { position:absolute; top:10px; right:10px; }
+.rpg-reset-build { padding:4px 10px; font-size:12px; line-height:1.2; }
 .rpg-builder-header { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; margin-bottom:15px; }
 .rpg-tree-list label { display:block; margin-bottom:6px; color:#cbd5f5; }
 .rpg-point-list { list-style: none; padding:0; margin:0; color:#e5e7eb; }
+.rpg-conversion-panel { margin-top:12px; background:#111827; border:1px solid #1f2937; border-radius:8px; padding:10px; }
+.rpg-conversion-panel h4 { margin:0 0 8px 0; }
+.rpg-conversion-form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.rpg-convert-amount { width:80px; }
+.rpg-conversion-history { margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+.rpg-conversion-entry { display:flex; justify-content:space-between; align-items:center; gap:10px; background:#0b1021; border:1px solid #1f2937; border-radius:6px; padding:6px 8px; }
 .rpg-builder-body { position: relative; }
 .rpg-tree { margin-bottom:20px; }
 .rpg-tiers { display:flex; gap:12px; }
