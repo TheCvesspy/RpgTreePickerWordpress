@@ -141,31 +141,46 @@
         const rows = {};
         let nextRow = 0;
         const rowHeight = 120;
-        const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier);
+        const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier).sort((a,b)=>a.name.localeCompare(b.name));
+        const usedRows = new Set();
 
         // seed tier 1
         tierSkills(1).forEach(skill=>{
-            if(rows[skill.id] === undefined){
-                rows[skill.id] = nextRow++;
-            }
+            while(usedRows.has(nextRow)) nextRow++;
+            rows[skill.id] = nextRow;
+            usedRows.add(nextRow);
+            nextRow++;
         });
 
         for(let tier=2;tier<=4;tier++){
+            const sharedPrereqRows = {};
             tierSkills(tier).forEach(skill=>{
                 if(skill.prereqs && skill.prereqs.length){
                     const primary = skill.prereqs[0];
                     const primaryRow = rows[primary] !== undefined ? rows[primary] : (rows[primary] = nextRow++);
-                    rows[skill.id] = primaryRow;
-                    skill.prereqs.slice(1).forEach((pr,idx)=>{
+                    usedRows.add(primaryRow);
+                    const offset = sharedPrereqRows[primaryRow] || 0;
+                    let targetRow = primaryRow + offset;
+                    while(usedRows.has(targetRow)){
+                        targetRow++;
+                    }
+                    rows[skill.id] = targetRow;
+                    sharedPrereqRows[primaryRow] = (targetRow - primaryRow) + 1;
+                    usedRows.add(targetRow);
+                    nextRow = Math.max(nextRow, targetRow + 1);
+                    skill.prereqs.slice(1).forEach(pr=>{
                         if(rows[pr] === undefined){
-                            rows[pr] = primaryRow + idx + 1;
-                            nextRow = Math.max(nextRow, rows[pr] + 1);
+                            while(usedRows.has(nextRow)) nextRow++;
+                            rows[pr] = nextRow;
+                            usedRows.add(nextRow);
+                            nextRow++;
                         }
                     });
                 } else {
-                    if(rows[skill.id] === undefined){
-                        rows[skill.id] = nextRow++;
-                    }
+                    while(usedRows.has(nextRow)) nextRow++;
+                    rows[skill.id] = nextRow;
+                    usedRows.add(nextRow);
+                    nextRow++;
                 }
             });
         }
@@ -173,7 +188,10 @@
         // ensure all skills have a row
         skills.forEach(skill=>{
             if(rows[skill.id] === undefined){
-                rows[skill.id] = nextRow++;
+                while(usedRows.has(nextRow)) nextRow++;
+                rows[skill.id] = nextRow;
+                usedRows.add(nextRow);
+                nextRow++;
             }
         });
 
@@ -185,12 +203,10 @@
     }
 
     function toggleSkill(skill){
-        if(!canSelectSkill(skill)){
-            showMessage(validateSkill(skill));
-            return;
-        }
         const id = skill.instance.toString();
-        if(selectedSkills[id]){
+        const isSelected = !!selectedSkills[id];
+
+        if(isSelected){
             const dependants = getSelectedDependants(skill);
             if(dependants.length){
                 const dependantNames = dependants.map(dep=>getSkillName(dep.id)).join(', ');
@@ -203,6 +219,10 @@
             }
             delete selectedSkills[id];
         } else {
+            if(!canSelectSkill(skill)){
+                showMessage(validateSkill(skill));
+                return;
+            }
             selectedSkills[id] = true;
         }
         renderPointSummary();
