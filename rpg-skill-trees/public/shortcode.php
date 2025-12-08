@@ -3,7 +3,8 @@ $settings = (new RPG_Skill_Trees())->get_settings();
 ?>
 <div class="rpg-skill-trees-builder" data-nonce="<?php echo esc_attr(wp_create_nonce('rpg_skill_trees_nonce')); ?>">
     <div class="rpg-reset-container">
-        <button class="rpg-reset-build button"><?php esc_html_e('Reset', 'rpg-skill-trees'); ?></button>
+        <button class="rpg-reset-build button" type="button"><?php esc_html_e('Reset', 'rpg-skill-trees'); ?></button>
+        <button class="button rpg-export-png" type="button"><?php esc_html_e('Exportovat jako PNG', 'rpg-skill-trees'); ?></button>
     </div>
     <div class="rpg-builder-header">
         <div class="rpg-tree-selector">
@@ -17,9 +18,6 @@ $settings = (new RPG_Skill_Trees())->get_settings();
             </label>
         </div>
         <div class="rpg-builder-messages" id="rpg-builder-messages"></div>
-        <div class="rpg-export">
-            <button class="button rpg-export-png" type="button"><?php esc_html_e('Exportovat jako PNG', 'rpg-skill-trees'); ?></button>
-        </div>
     </div>
     <div class="rpg-builder-body" id="rpg-builder-body"></div>
     <svg class="rpg-prereq-lines" id="rpg-prereq-lines"></svg>

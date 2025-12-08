@@ -226,7 +226,7 @@
 
         const gap = 10; // ensures at least 8px spacing between card edges while staying compact
         const skills = data.skills.filter(s=>s.tree===treeId);
-        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:220px; padding:12px;"></div>');
+        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:235px; padding:12px;"></div>');
         $('body').append(probeTier);
 
         let maxHeight = 0;

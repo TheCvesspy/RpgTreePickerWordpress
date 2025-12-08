@@ -10,6 +10,8 @@ class RPG_Skill_Trees {
         add_action('save_post', [$this, 'save_meta_boxes']);
         add_action('admin_menu', [$this, 'register_admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
+        add_filter('manage_rpg_skill_posts_columns', [$this, 'add_skill_columns']);
+        add_action('manage_rpg_skill_posts_custom_column', [$this, 'render_skill_columns'], 10, 2);
         add_action('wp_enqueue_scripts', [$this, 'public_assets']);
         add_shortcode('rpg_skill_trees', [$this, 'render_shortcode']);
         add_action('wp_ajax_rpg_skill_trees_save_build', [$this, 'ajax_save_build']);
@@ -78,12 +80,15 @@ class RPG_Skill_Trees {
         $trees = get_posts(['post_type' => 'rpg_skill_tree', 'numberposts' => -1]);
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
 
-        echo '<p><label>' . esc_html__('Tree(s)', 'rpg-skill-trees') . '</label><br />';
-        echo '<select name="rpg_trees[]" multiple size="5" class="widefat">';
+        echo '<p><label>' . esc_html__('Tree(s)', 'rpg-skill-trees') . '</label></p>';
+        echo '<div class="rpg-checkbox-list">';
         foreach ($trees as $t) {
-            echo '<option value="' . esc_attr($t->ID) . '" ' . selected(in_array($t->ID, $tree_meta, true), true, false) . '>' . esc_html($t->post_title) . '</option>';
+            $input_id = 'rpg-tree-' . $t->ID;
+            echo '<label class="rpg-checkbox-item" for="' . esc_attr($input_id) . '">';
+            echo '<input type="checkbox" id="' . esc_attr($input_id) . '" name="rpg_trees[]" value="' . esc_attr($t->ID) . '" ' . checked(in_array($t->ID, $tree_meta, true), true, false) . ' /> ' . esc_html($t->post_title);
+            echo '</label>';
         }
-        echo '</select></p>';
+        echo '</div>';
 
         echo '<p><label>' . esc_html__('Tier (1-4)', 'rpg-skill-trees') . '</label><br />';
         echo '<input type="number" min="1" max="4" name="rpg_tier" value="' . esc_attr($tier ? $tier : 1) . '" /></p>';
@@ -101,12 +106,20 @@ class RPG_Skill_Trees {
         echo '<p><label>' . esc_html__('Effect', 'rpg-skill-trees') . '</label><br />';
         echo '<input type="text" class="widefat" name="rpg_effect" value="' . esc_attr($effect) . '" /></p>';
 
-        echo '<p><label>' . esc_html__('Prerequisite Skills', 'rpg-skill-trees') . '</label><br />';
-        echo '<select name="rpg_prereqs[]" multiple size="5" class="widefat">';
-        foreach ($skills as $s) {
-            echo '<option value="' . esc_attr($s->ID) . '" ' . selected(in_array($s->ID, $prereqs), true, false) . '>' . esc_html($s->post_title) . '</option>';
+        echo '<p><label>' . esc_html__('Prerequisite Skills', 'rpg-skill-trees') . '</label></p>';
+        echo '<div class="rpg-checkbox-columns">';
+        $chunks = array_chunk($skills, 10);
+        foreach ($chunks as $chunk_index => $skill_chunk) {
+            echo '<div class="rpg-checkbox-column">';
+            foreach ($skill_chunk as $s) {
+                $input_id = 'rpg-prereq-' . $s->ID . '-' . $chunk_index;
+                echo '<label class="rpg-checkbox-item" for="' . esc_attr($input_id) . '">';
+                echo '<input type="checkbox" id="' . esc_attr($input_id) . '" name="rpg_prereqs[]" value="' . esc_attr($s->ID) . '" ' . checked(in_array($s->ID, $prereqs), true, false) . ' /> ' . esc_html($s->post_title);
+                echo '</label>';
+            }
+            echo '</div>';
         }
-        echo '</select></p>';
+        echo '</div>';
     }
 
     public function save_meta_boxes($post_id) {
@@ -179,6 +192,11 @@ class RPG_Skill_Trees {
             }
             $settings['require_login'] = isset($_POST['require_login']) ? 1 : 0;
             $settings['allow_multiple_builds'] = isset($_POST['allow_multiple_builds']) ? 1 : 0;
+            $settings['font_sizes'] = [
+                'title' => isset($_POST['font_sizes']['title']) ? floatval($_POST['font_sizes']['title']) : 14,
+                'tooltip' => isset($_POST['font_sizes']['tooltip']) ? floatval($_POST['font_sizes']['tooltip']) : 12,
+                'requirements' => isset($_POST['font_sizes']['requirements']) ? floatval($_POST['font_sizes']['requirements']) : 12,
+            ];
             update_option(self::OPTION_KEY, $settings);
             echo '<div class="updated"><p>' . esc_html__('Settings saved.', 'rpg-skill-trees') . '</p></div>';
         }
@@ -208,6 +226,14 @@ class RPG_Skill_Trees {
         if (has_shortcode($post->post_content, 'rpg_skill_trees')) {
             wp_enqueue_style('rpg-skill-trees-public', plugins_url('../assets/css/public.css', __FILE__), [], self::VERSION);
             wp_enqueue_script('rpg-skill-trees-public', plugins_url('../assets/js/public.js', __FILE__), ['jquery'], self::VERSION, true);
+            $settings = $this->get_settings();
+            $title_size = isset($settings['font_sizes']['title']) ? max(1, floatval($settings['font_sizes']['title'])) : 14;
+            $tooltip_size = isset($settings['font_sizes']['tooltip']) ? max(1, floatval($settings['font_sizes']['tooltip'])) : 12;
+            $requirements_size = isset($settings['font_sizes']['requirements']) ? max(1, floatval($settings['font_sizes']['requirements'])) : 12;
+            $inline_styles = '.rpg-skill-name{font-size:' . $title_size . 'px;}'
+                . '.rpg-skill-tooltip,.rpg-tooltip-effect{font-size:' . $tooltip_size . 'px;}'
+                . '.rpg-skill-prereqs{font-size:' . $requirements_size . 'px;}';
+            wp_add_inline_style('rpg-skill-trees-public', $inline_styles);
             wp_localize_script('rpg-skill-trees-public', 'RPGSkillTreesData', $this->get_public_data());
         }
     }
@@ -480,8 +506,56 @@ class RPG_Skill_Trees {
             'conversions' => [],
             'require_login' => 0,
             'allow_multiple_builds' => 0,
+            'font_sizes' => [
+                'title' => 14,
+                'tooltip' => 12,
+                'requirements' => 12,
+            ],
         ];
         $settings = get_option(self::OPTION_KEY, []);
-        return wp_parse_args($settings, $defaults);
+        $settings = wp_parse_args($settings, $defaults);
+        $settings['font_sizes'] = wp_parse_args($settings['font_sizes'], $defaults['font_sizes']);
+        return $settings;
+    }
+
+    public function add_skill_columns($columns) {
+        $new = [];
+        foreach ($columns as $key => $label) {
+            $new[$key] = $label;
+            if ('title' === $key) {
+                $new['rpg_used_trees'] = __('Used in tree(s)', 'rpg-skill-trees');
+            }
+        }
+        if (!isset($new['rpg_used_trees'])) {
+            $new['rpg_used_trees'] = __('Used in tree(s)', 'rpg-skill-trees');
+        }
+        return $new;
+    }
+
+    public function render_skill_columns($column, $post_id) {
+        if ('rpg_used_trees' !== $column) {
+            return;
+        }
+        $trees = get_post_meta($post_id, '_rpg_trees', true);
+        if (empty($trees)) {
+            $legacy = get_post_meta($post_id, '_rpg_tree', true);
+            $trees = $legacy ? [$legacy] : [];
+        }
+        if (empty($trees)) {
+            echo '<em>' . esc_html__('Not assigned', 'rpg-skill-trees') . '</em>';
+            return;
+        }
+        $names = [];
+        foreach ((array) $trees as $tree_id) {
+            $tree = get_post($tree_id);
+            if ($tree && 'rpg_skill_tree' === $tree->post_type) {
+                $names[] = $tree->post_title;
+            }
+        }
+        if (empty($names)) {
+            echo '<em>' . esc_html__('Not assigned', 'rpg-skill-trees') . '</em>';
+            return;
+        }
+        echo esc_html(implode(', ', $names));
     }
 }

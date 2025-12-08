@@ -60,6 +60,24 @@ $settings = isset($settings) ? $settings : [];
                 </tr>
             </tbody>
         </table>
+
+        <h2><?php esc_html_e('Skill Card Typography', 'rpg-skill-trees'); ?></h2>
+        <table class="form-table">
+            <tbody>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Skill title font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="font_sizes[title]" value="<?php echo esc_attr($settings['font_sizes']['title'] ?? 14); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Tooltip and effect font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="font_sizes[tooltip]" value="<?php echo esc_attr($settings['font_sizes']['tooltip'] ?? 12); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Requirements font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="font_sizes[requirements]" value="<?php echo esc_attr($settings['font_sizes']['requirements'] ?? 12); ?>" /></td>
+                </tr>
+            </tbody>
+        </table>
         <?php submit_button(); ?>
     </form>
 </div>
