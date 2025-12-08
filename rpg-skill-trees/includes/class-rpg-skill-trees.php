@@ -37,7 +37,7 @@ class RPG_Skill_Trees {
             'public' => false,
             'show_ui' => true,
             'show_in_menu' => false,
-            'supports' => ['title', 'editor', 'thumbnail'],
+            'supports' => ['title', 'thumbnail'],
         ]);
     }
 
@@ -95,7 +95,7 @@ class RPG_Skill_Trees {
         echo '<button type="button" class="button rpg-upload-icon" data-target="rpg_skill_icon">' . esc_html__('Upload Icon', 'rpg-skill-trees') . '</button></p>';
 
         echo '<p><label>' . esc_html__('Tooltip', 'rpg-skill-trees') . '</label><br />';
-        echo '<textarea class="widefat" name="rpg_tooltip" rows="3">' . esc_textarea($tooltip) . '</textarea></p>';
+        echo '<input type="text" class="widefat" name="rpg_tooltip" value="' . esc_attr($tooltip) . '" /></p>';
 
         echo '<p><label>' . esc_html__('Prerequisite Skills', 'rpg-skill-trees') . '</label><br />';
         echo '<select name="rpg_prereqs[]" multiple size="5" class="widefat">';
@@ -254,7 +254,7 @@ class RPG_Skill_Trees {
             'i18n' => [
                 'insufficientPoints' => __('Not enough points for this tier.', 'rpg-skill-trees'),
                 'lockedByTier' => __('Tier requirements not met.', 'rpg-skill-trees'),
-                'requiresSkills' => __('Requires: ', 'rpg-skill-trees'),
+                'requiresSkills' => __('Vyžaduje: ', 'rpg-skill-trees'),
                 'saved' => __('Build saved', 'rpg-skill-trees'),
                 'loginRequired' => __('You must be logged in to save builds.', 'rpg-skill-trees'),
                 'treeRequired' => __('Select the related tree first.', 'rpg-skill-trees'),
