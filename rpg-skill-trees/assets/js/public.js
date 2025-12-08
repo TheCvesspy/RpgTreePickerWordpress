@@ -180,71 +180,78 @@
         const rows = {};
         const rowHeight = getSkillRowHeight(treeId);
         let nextRow = 0;
-        const rowUsage = {};
+        const rowOwners = {};
         const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier);
         const getName = id => {
             const skill = skills.find(s=>s.id===id);
             return skill ? skill.name : '';
         };
 
-        const isRowUsedInTier = (row, tier) => rowUsage[row] && rowUsage[row].has(tier);
-        const reserveRow = (row, tier) => {
-            if(!rowUsage[row]) rowUsage[row] = new Set();
-            rowUsage[row].add(tier);
-            nextRow = Math.max(nextRow, row + 1);
-        };
-        const assignRow = (skill, desiredRow) => {
-            let row = desiredRow;
-            while(isRowUsedInTier(row, skill.tier)){
+        const findAvailableRow = (startRow, ownerId) => {
+            let row = startRow;
+            while(rowOwners[row] !== undefined && rowOwners[row] !== ownerId){
                 row++;
             }
+            return row;
+        };
+
+        const assignRow = (skill, desiredRow, ownerId) => {
+            const row = findAvailableRow(desiredRow, ownerId);
             rows[skill.id] = row;
-            reserveRow(row, skill.tier);
+            if(rowOwners[row] === undefined){
+                rowOwners[row] = ownerId;
+            }
+            nextRow = Math.max(nextRow, row + 1);
         };
 
         tierSkills(1)
             .sort((a,b)=>a.name.localeCompare(b.name))
-            .forEach(skill=>assignRow(skill, nextRow));
+            .forEach(skill=>assignRow(skill, nextRow, skill.id));
 
         for(let tier=2;tier<=4;tier++){
-            const grouped = {};
+            const singlePrereqs = [];
+            const multiPrereqs = [];
             const noPrereqs = [];
 
             tierSkills(tier).forEach(skill=>{
                 if(skill.prereqs && skill.prereqs.length){
-                    const primary = [...skill.prereqs].sort((a,b)=>getName(a).localeCompare(getName(b)))[0];
-                    if(!grouped[primary]) grouped[primary] = [];
-                    grouped[primary].push(skill);
+                    if(skill.prereqs.length > 1){
+                        multiPrereqs.push(skill);
+                    } else {
+                        singlePrereqs.push(skill);
+                    }
                 } else {
                     noPrereqs.push(skill);
                 }
             });
 
-            Object.keys(grouped)
-                .sort((a,b)=>getName(a).localeCompare(getName(b)))
-                .forEach(primary=>{
-                    if(rows[primary] === undefined){
-                        const prereqSkill = skills.find(s=>s.id===parseInt(primary,10));
-                        if(prereqSkill){
-                            assignRow(prereqSkill, nextRow);
-                        }
+            singlePrereqs
+                .sort((a,b)=>a.name.localeCompare(b.name))
+                .forEach(skill=>{
+                    const prereqId = skill.prereqs[0];
+                    const prereqSkill = skills.find(s=>s.id===parseInt(prereqId,10));
+                    if(prereqSkill && rows[prereqSkill.id] === undefined){
+                        assignRow(prereqSkill, nextRow, prereqSkill.id);
                     }
-                    const baseRow = rows[primary] !== undefined ? rows[primary] : nextRow;
-                    grouped[primary]
-                        .sort((a,b)=>a.name.localeCompare(b.name))
-                        .forEach(skill=>{
-                            assignRow(skill, baseRow);
-                        });
+                    const baseRow = rows[prereqId] !== undefined ? rows[prereqId] : nextRow;
+                    const owner = rowOwners[baseRow] !== undefined ? rowOwners[baseRow] : prereqId;
+                    assignRow(skill, baseRow, owner);
+                });
+
+            multiPrereqs
+                .sort((a,b)=>a.name.localeCompare(b.name))
+                .forEach(skill=>{
+                    assignRow(skill, nextRow, skill.id);
                 });
 
             noPrereqs
                 .sort((a,b)=>a.name.localeCompare(b.name))
-                .forEach(skill=>assignRow(skill, nextRow));
+                .forEach(skill=>assignRow(skill, nextRow, skill.id));
         }
 
         skills.forEach(skill=>{
             if(rows[skill.id] === undefined){
-                assignRow(skill, nextRow);
+                assignRow(skill, nextRow, skill.id);
             }
         });
 
