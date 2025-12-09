@@ -27,4 +27,14 @@
         });
         frame.open();
     });
+
+    $(document).on('click', '.rst-tree-tab-link', function(e){
+        e.preventDefault();
+        var target = $(this).data('target');
+        var tabs = $(this).closest('.rst-tree-tabs');
+        tabs.find('.rst-tree-tab-link').removeClass('nav-tab-active');
+        $(this).addClass('nav-tab-active');
+        tabs.find('.rst-tree-tab-panel').removeClass('is-active');
+        tabs.find('#' + target).addClass('is-active');
+    });
 })(jQuery);
