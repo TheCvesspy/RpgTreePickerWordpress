@@ -243,6 +243,7 @@
     // between cards. Skills inherit the row of their primary prerequisite when possible; siblings
     // sharing a prerequisite are stacked underneath in alphabetical order.
     const rowHeightCache = {};
+    const ROW_GAP = 5;
 
     function clearRowHeightCache(){
         Object.keys(rowHeightCache).forEach(key=> delete rowHeightCache[key]);
@@ -281,7 +282,7 @@
 
         probeTier.remove();
         const rowHeight = Math.ceil(maxHeight + gap);
-        rowHeightCache[treeId] = { rowHeight, heights };
+        rowHeightCache[treeId] = { rowHeight, heights, rowGap: ROW_GAP };
         return rowHeightCache[treeId];
     }
 
@@ -290,6 +291,7 @@
         const rows = {};
         const measurements = getSkillMeasurements(treeId);
         const rowHeight = measurements.rowHeight;
+        const rowGap = measurements.rowGap !== undefined ? measurements.rowGap : ROW_GAP;
         let nextRow = 0;
         let rowOwners = {};
         const preferredRows = {};
@@ -449,7 +451,7 @@
         let totalHeight = 0;
         for(let i=0;i<Math.max(1, rowHeights.length);i++){
             rowOffsets[i] = totalHeight;
-            totalHeight += rowHeights[i] || rowHeight;
+            totalHeight += (rowHeights[i] || rowHeight) + rowGap;
         }
 
         return { rows, totalRows: Math.max(1, rowHeights.length || nextRow), rowHeight, rowOffsets, totalHeight };
