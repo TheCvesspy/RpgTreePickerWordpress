@@ -34,8 +34,8 @@ class Rpg_Skill_Trees_Public {
         $skills = get_posts([
             'post_type' => 'rpg_skill',
             'numberposts' => -1,
-            'orderby' => 'title',
-            'order' => 'ASC',
+            'meta_key' => 'rst_sort_order',
+            'orderby' => ['meta_value_num' => 'ASC', 'title' => 'ASC'],
         ]);
         $tree_skills = [];
         foreach ($skills as $skill) {
@@ -44,6 +44,16 @@ class Rpg_Skill_Trees_Public {
         }
         $payload = [];
         foreach ($trees as $tree) {
+            if (isset($tree_skills[$tree->ID])) {
+                usort($tree_skills[$tree->ID], function($a, $b) {
+                    $sort_a = intval(get_post_meta($a->ID, 'rst_sort_order', true));
+                    $sort_b = intval(get_post_meta($b->ID, 'rst_sort_order', true));
+                    if ($sort_a === $sort_b) {
+                        return strcmp($a->post_title, $b->post_title);
+                    }
+                    return $sort_a <=> $sort_b;
+                });
+            }
             $payload[] = [
                 'id' => $tree->ID,
                 'name' => $tree->post_title,
@@ -71,6 +81,7 @@ class Rpg_Skill_Trees_Public {
             'tree_id' => intval($meta['rst_tree_id'][0] ?? 0),
             'prerequisites' => (array) maybe_unserialize($meta['rst_prereq_skills'][0] ?? []),
             'min_previous' => floatval($meta['rst_min_previous'][0] ?? 0),
+            'sort_order' => intval($meta['rst_sort_order'][0] ?? 0),
         ];
     }
 
