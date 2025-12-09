@@ -281,6 +281,7 @@ class RPG_Skill_Trees {
                     'tooltip' => wp_kses_post(get_post_meta($skill->ID, '_rpg_tooltip', true)),
                     'effect' => wp_kses_post(get_post_meta($skill->ID, '_rpg_effect', true)),
                     'prereqs' => (array) get_post_meta($skill->ID, '_rpg_prereqs', true),
+                    'sort_order' => intval(get_post_meta($skill->ID, 'rst_sort_order', true)),
                 ];
             }
         }
