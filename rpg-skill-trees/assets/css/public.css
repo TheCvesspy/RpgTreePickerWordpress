@@ -1,6 +1,15 @@
 .rpg-skill-trees-builder { position: relative; border:1px solid #1f2937; padding: 14px; background:#0b1021; color:#e5e7eb; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
 .rpg-reset-container { position:absolute; top:10px; right:10px; display:flex; align-items:center; gap:6px; }
-.rpg-reset-build { padding:4px 8px; font-size:12px; line-height:1.2; }
+.rpg-reset-build,
+.rpg-export-png {
+    padding:3px 10px;
+    font-size:12px;
+    line-height:1.2;
+    border-radius:6px;
+    min-height:0;
+    display:inline-flex;
+    align-items:center;
+}
 .rpg-builder-header { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; margin-bottom:12px; }
 .rpg-tree-list label { display:block; margin-bottom:6px; color:#cbd5f5; }
 .rpg-point-list { display:flex; flex-direction:column; gap:8px; padding:0; margin:0; color:#e5e7eb; }
@@ -34,5 +43,4 @@
 .rpg-builder-options { display:flex; align-items:center; gap:10px; }
 .rpg-rules-toggle { display:flex; align-items:center; gap:6px; color:#cbd5f5; }
 .rpg-hover-tooltip { position:absolute; display:none; max-width:260px; background:#111827; color:#e5e7eb; border:1px solid #374151; padding:8px 10px; border-radius:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); z-index:9999; pointer-events:none; }
-.rpg-export-png { padding:4px 8px; font-size:12px; line-height:1.2; }
 @media(max-width:900px){ .rpg-tiers { flex-direction:column; } }
