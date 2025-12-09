@@ -210,8 +210,8 @@
                 tierColumn.append('<div class="rpg-tier-title">'+dataLabel('Tier')+' '+tier+'</div>');
                 const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"></div>');
                 const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
-                const paddingOffset = 2;
-                const paddingBottom = 2;
+                const paddingOffset = 0;
+                const paddingBottom = 0;
                 tierCol.css('min-height', (layout.totalRows * layout.rowHeight + paddingOffset + paddingBottom)+'px');
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
@@ -253,9 +253,9 @@
             return rowHeightCache[treeId];
         }
 
-        const gap = 1; // minimal separation to prevent overlap while keeping rows tight
+        const gap = 0; // allow rows to sit directly against the card height without extra spacing
         const skills = data.skills.filter(s=>s.tree===treeId);
-        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:270px; padding:12px;"></div>');
+        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:270px; padding:0;"></div>');
         $('body').append(probeTier);
 
         let maxHeight = 0;
@@ -277,7 +277,7 @@
         }
 
         probeTier.remove();
-        rowHeightCache[treeId] = maxHeight + gap;
+        rowHeightCache[treeId] = Math.ceil(maxHeight + gap);
         return rowHeightCache[treeId];
     }
 
