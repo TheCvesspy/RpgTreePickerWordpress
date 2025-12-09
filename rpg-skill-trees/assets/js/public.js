@@ -8,6 +8,17 @@
     let svg;
     let html2CanvasPromise;
 
+    function sortSkills(a,b){
+        const orderA = parseInt(a && a.sort_order !== undefined ? a.sort_order : 0, 10) || 0;
+        const orderB = parseInt(b && b.sort_order !== undefined ? b.sort_order : 0, 10) || 0;
+        if(orderA !== orderB){
+            return orderA - orderB;
+        }
+        const nameA = (a && a.name) ? a.name : '';
+        const nameB = (b && b.name) ? b.name : '';
+        return nameA.localeCompare(nameB);
+    }
+
     function findSkillByInstance(instanceId){
         return data.skills.find(s=>s.instance === instanceId);
     }
@@ -101,7 +112,8 @@
 
     function groupSkillsByTree(){
         const grouped = {};
-        data.skills.forEach(skill=>{
+        const sortedSkills = [...data.skills].sort(sortSkills);
+        sortedSkills.forEach(skill=>{
             if(!grouped[skill.tree]) grouped[skill.tree] = {};
             if(!grouped[skill.tree][skill.tier]) grouped[skill.tree][skill.tier] = [];
             grouped[skill.tree][skill.tier].push(skill);
@@ -281,7 +293,7 @@
         };
 
         tierSkills(1)
-            .sort((a,b)=>a.name.localeCompare(b.name))
+            .sort(sortSkills)
             .forEach(skill=>assignRow(skill, nextRow, skill.id));
 
         for(let tier=2;tier<=4;tier++){
@@ -302,7 +314,7 @@
             });
 
             singlePrereqs
-                .sort((a,b)=>a.name.localeCompare(b.name))
+                .sort(sortSkills)
                 .forEach(skill=>{
                     const prereqId = skill.prereqs[0];
                     const prereqSkill = skills.find(s=>s.id===parseInt(prereqId,10));
@@ -315,13 +327,13 @@
                 });
 
             multiPrereqs
-                .sort((a,b)=>a.name.localeCompare(b.name))
+                .sort(sortSkills)
                 .forEach(skill=>{
                     assignRow(skill, nextRow, skill.id);
                 });
 
             noPrereqs
-                .sort((a,b)=>a.name.localeCompare(b.name))
+                .sort(sortSkills)
                 .forEach(skill=>assignRow(skill, nextRow, skill.id));
         }
 
