@@ -246,6 +246,9 @@ class RPG_Skill_Trees {
                 'skill_selected_bg' => sanitize_hex_color($_POST['colors']['skill_selected_bg'] ?? '') ?: '#0f172a',
                 'skill_selected_border' => sanitize_hex_color($_POST['colors']['skill_selected_border'] ?? '') ?: '#60a5fa',
                 'skill_hover_border' => sanitize_hex_color($_POST['colors']['skill_hover_border'] ?? '') ?: '#60a5fa',
+                'skill_highest_bg' => sanitize_hex_color($_POST['colors']['skill_highest_bg'] ?? '') ?: '#1e1b4b',
+                'skill_highest_border' => sanitize_hex_color($_POST['colors']['skill_highest_border'] ?? '') ?: '#8b5cf6',
+                'skill_highest_text' => sanitize_hex_color($_POST['colors']['skill_highest_text'] ?? '') ?: '#ede9fe',
                 'points_bg' => sanitize_hex_color($_POST['colors']['points_bg'] ?? '') ?: '#111827',
                 'points_border' => sanitize_hex_color($_POST['colors']['points_border'] ?? '') ?: '#1f2937',
                 'points_text' => sanitize_hex_color($_POST['colors']['points_text'] ?? '') ?: '#e5e7eb',
@@ -302,6 +305,10 @@ class RPG_Skill_Trees {
                 . '.rpg-skill:hover{border-color:' . esc_html($colors['skill_hover_border']) . ';}'
                 . '.rpg-skill.rpg-selected{background:' . esc_html($colors['skill_selected_bg']) . ';border-color:' . esc_html($colors['skill_selected_border']) . ';box-shadow:0 0 0 2px ' . esc_html($colors['skill_selected_border']) . ';}'
                 . '.rpg-skill-name{color:' . esc_html($colors['skill_text']) . ';}'
+                . '.rpg-skill.rpg-skill--highest-tier{background:' . esc_html($colors['skill_highest_bg']) . ';border-color:' . esc_html($colors['skill_highest_border']) . ';color:' . esc_html($colors['skill_highest_text']) . ';box-shadow:0 6px 18px ' . $this->hex_to_rgba($colors['skill_highest_border'], 0.35) . ';}'
+                . '.rpg-skill.rpg-skill--highest-tier .rpg-skill-name{color:' . esc_html($colors['skill_highest_text']) . ';}'
+                . '.rpg-skill.rpg-skill--highest-tier .rpg-skill-tooltip,.rpg-skill.rpg-skill--highest-tier .rpg-tooltip-effect,.rpg-skill.rpg-skill--highest-tier .rpg-skill-prereqs{color:' . esc_html($colors['skill_highest_text']) . ';}'
+                . '.rpg-skill.rpg-skill--highest-tier.rpg-selected{background:' . esc_html($colors['skill_highest_bg']) . ';border-color:' . esc_html($colors['skill_highest_border']) . ';box-shadow:0 0 0 2px ' . esc_html($colors['skill_highest_border']) . ',0 6px 18px ' . $this->hex_to_rgba($colors['skill_highest_border'], 0.35) . ';}'
                 . '.rpg-skill-tooltip,.rpg-tooltip-effect{color:' . esc_html($colors['skill_tooltip']) . ';}'
                 . '.rpg-hover-tooltip{background:' . esc_html($colors['skill_tooltip_bg']) . ';border-color:' . esc_html($colors['skill_border']) . ';}'
                 . '.rpg-skill-prereqs{color:' . esc_html($colors['skill_prereq']) . ';}'
@@ -623,6 +630,9 @@ class RPG_Skill_Trees {
                 'skill_selected_bg' => '#0f172a',
                 'skill_selected_border' => '#60a5fa',
                 'skill_hover_border' => '#60a5fa',
+                'skill_highest_bg' => '#1e1b4b',
+                'skill_highest_border' => '#8b5cf6',
+                'skill_highest_text' => '#ede9fe',
                 'points_bg' => '#111827',
                 'points_border' => '#1f2937',
                 'points_text' => '#e5e7eb',
@@ -636,6 +646,21 @@ class RPG_Skill_Trees {
         $settings['header_font_sizes'] = wp_parse_args($settings['header_font_sizes'], $defaults['header_font_sizes']);
         $settings['colors'] = wp_parse_args($settings['colors'], $defaults['colors']);
         return $settings;
+    }
+
+    private function hex_to_rgba($hex, $alpha = 1) {
+        $hex = ltrim(trim($hex), '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if (strlen($hex) !== 6) {
+            return 'rgba(0,0,0,' . floatval($alpha) . ')';
+        }
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $alpha = max(0, min(1, floatval($alpha)));
+        return 'rgba(' . $r . ',' . $g . ',' . $b . ',' . $alpha . ')';
     }
 
     public function add_skill_columns($columns) {

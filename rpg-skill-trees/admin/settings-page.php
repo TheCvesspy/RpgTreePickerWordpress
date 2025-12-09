@@ -169,6 +169,22 @@ $settings = isset($settings) ? $settings : [];
                 </tr>
 
                 <tr>
+                    <th colspan="2"><h4><?php esc_html_e('Highest Tier Skill Card', 'rpg-skill-trees'); ?></h4></th>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Highest tier background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_highest_bg]" value="<?php echo esc_attr($settings['colors']['skill_highest_bg'] ?? '#1e1b4b'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Highest tier border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_highest_border]" value="<?php echo esc_attr($settings['colors']['skill_highest_border'] ?? '#8b5cf6'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Highest tier text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_highest_text]" value="<?php echo esc_attr($settings['colors']['skill_highest_text'] ?? '#ede9fe'); ?>" /></td>
+                </tr>
+
+                <tr>
                     <th colspan="2"><h3><?php esc_html_e('Buttons', 'rpg-skill-trees'); ?></h3></th>
                 </tr>
                 <tr>

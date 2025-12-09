@@ -33,13 +33,19 @@
 .rpg-builder-body { position: relative; }
 .rpg-tree { margin-bottom:14px; }
 .rpg-tiers { display:flex; gap:10px; align-items:flex-start; }
-.rpg-tier { background:#111827; padding:10px; min-width:255px; border-radius:8px; position:relative; border:1px solid #1f2937; box-shadow:inset 0 1px 0 rgba(255,255,255,0.03); }
-.rpg-tier-column { display:flex; flex-direction:column; gap:6px; min-width:265px; }
+.rpg-tier { background:#111827; padding:10px; min-width:293px; border-radius:8px; position:relative; border:1px solid #1f2937; box-shadow:inset 0 1px 0 rgba(255,255,255,0.03); }
+.rpg-tier-column { display:flex; flex-direction:column; gap:6px; min-width:305px; }
 .rpg-tier-title { text-align:center; color:#93c5fd; font-weight:600; margin:0; font-size:14px; }
 .rpg-skill { background:#1f2937; border:1px solid #374151; padding:8px 9px; cursor:pointer; border-radius:6px; position:absolute; left:0; right:0; transition:all 0.15s ease; color:#f9fafb; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
 .rpg-skill:hover { border-color:#60a5fa; box-shadow:0 6px 16px rgba(0,0,0,0.35); }
 .rpg-skill.rpg-selected { border-color:#60a5fa; box-shadow:0 0 0 2px rgba(96,165,250,0.35); background:#0f172a; }
 .rpg-skill.rpg-locked { opacity:0.45; cursor:not-allowed; }
+.rpg-skill.rpg-skill--highest-tier { background:#1e1b4b; border-color:#8b5cf6; color:#ede9fe; box-shadow:0 6px 18px rgba(139,92,246,0.35); }
+.rpg-skill.rpg-skill--highest-tier .rpg-skill-name { color:#ede9fe; }
+.rpg-skill.rpg-skill--highest-tier .rpg-skill-tooltip,
+.rpg-skill.rpg-skill--highest-tier .rpg-tooltip-effect,
+.rpg-skill.rpg-skill--highest-tier .rpg-skill-prereqs { color:#ede9fe; }
+.rpg-skill.rpg-skill--highest-tier.rpg-selected { background:#1e1b4b; border-color:#8b5cf6; box-shadow:0 0 0 2px #8b5cf6, 0 6px 18px rgba(139,92,246,0.35); }
 .rpg-skill-icon img { width:28px; height:28px; object-fit:contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); }
 .rpg-skill-name { font-weight:600; color:#f9fafb; font-size:14px; line-height:1.2; }
 .rpg-skill-tooltip { font-size:12px; color:#cbd5e1; margin-top:6px; line-height:1.4; }

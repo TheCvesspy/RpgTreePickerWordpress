@@ -133,10 +133,14 @@
         return parts.join('');
     }
 
-    function buildSkillNode(skill){
+    function buildSkillNode(skill, highestTier){
         const skillNode = $('<div class="rpg-skill" data-instance="'+skill.instance+'" data-id="'+skill.id+'" data-tree="'+skill.tree+'" data-tier="'+skill.tier+'"></div>');
         const tooltipContent = buildTooltipContent(skill);
         skillNode.data('tooltip', tooltipContent);
+        const maxTier = parseInt(highestTier, 10) || 0;
+        if(maxTier > 0 && parseInt(skill.tier,10) === maxTier){
+            skillNode.addClass('rpg-skill--highest-tier');
+        }
         if(skill.icon){
             skillNode.append('<div class="rpg-skill-icon"><img src="'+skill.icon+'" alt="" /></div>');
         }
@@ -177,6 +181,17 @@
         }
     }
 
+    const highestTierCache = {};
+
+    function getHighestTierForTree(treeId){
+        if(highestTierCache[treeId] !== undefined){
+            return highestTierCache[treeId];
+        }
+        const tiers = data.skills.filter(s=>s.tree===treeId).map(s=>parseInt(s.tier,10) || 0);
+        highestTierCache[treeId] = tiers.length ? Math.max(...tiers) : 0;
+        return highestTierCache[treeId];
+    }
+
     function renderBuilder(){
         hideHoverTooltip();
         const body = $('#rpg-builder-body');
@@ -189,6 +204,7 @@
             treeWrap.append('<h3>'+tree.name+'</h3>');
             const tiersWrap = $('<div class="rpg-tiers"></div>');
             const layout = calculateLayoutForTree(treeId);
+            const highestTier = getHighestTierForTree(treeId);
             for(let tier=1;tier<=4;tier++){
                 const tierColumn = $('<div class="rpg-tier-column" data-tier="'+tier+'"></div>');
                 tierColumn.append('<div class="rpg-tier-title">'+dataLabel('Tier')+' '+tier+'</div>');
@@ -200,7 +216,7 @@
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
                 skills.forEach(skill=>{
-                    const skillNode = buildSkillNode(skill);
+                    const skillNode = buildSkillNode(skill, highestTier);
                     const row = layout.rows[skill.id] || 0;
                     const top = paddingOffset + (row * layout.rowHeight);
                     skillNode.css('top', top + 'px');
@@ -239,12 +255,13 @@
 
         const gap = 3; // keeps visible separation while making rows more compact
         const skills = data.skills.filter(s=>s.tree===treeId);
-        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:235px; padding:12px;"></div>');
+        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:270px; padding:12px;"></div>');
         $('body').append(probeTier);
 
         let maxHeight = 0;
+        const highestTier = getHighestTierForTree(treeId);
         skills.forEach(skill=>{
-            const node = buildSkillNode(skill);
+            const node = buildSkillNode(skill, highestTier);
             node.css({position:'relative', left:'auto', right:'auto', top:'auto'});
             probeTier.append(node);
             maxHeight = Math.max(maxHeight, node.outerHeight(true));
