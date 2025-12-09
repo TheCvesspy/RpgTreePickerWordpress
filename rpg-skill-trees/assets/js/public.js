@@ -210,15 +210,15 @@
                 tierColumn.append('<div class="rpg-tier-title">'+dataLabel('Tier')+' '+tier+'</div>');
                 const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"></div>');
                 const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
-                const paddingOffset = 4;
-                const paddingBottom = 4;
-                tierCol.css('min-height', (layout.totalRows * layout.rowHeight + paddingOffset + paddingBottom)+'px');
+                const paddingOffset = 0;
+                const paddingBottom = 0;
+                tierCol.css('min-height', (layout.totalHeight + paddingOffset + paddingBottom)+'px');
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
                 skills.forEach(skill=>{
                     const skillNode = buildSkillNode(skill, highestTier);
                     const row = layout.rows[skill.id] || 0;
-                    const top = paddingOffset + (row * layout.rowHeight);
+                    const top = paddingOffset + (layout.rowOffsets[row] !== undefined ? layout.rowOffsets[row] : (row * layout.rowHeight));
                     skillNode.css('top', top + 'px');
                     if(skillNode.data('tooltip')){
                         skillNode.on('mouseenter', event => showHoverTooltip(skillNode.data('tooltip'), event));
@@ -243,28 +243,32 @@
     // between cards. Skills inherit the row of their primary prerequisite when possible; siblings
     // sharing a prerequisite are stacked underneath in alphabetical order.
     const rowHeightCache = {};
+    const ROW_GAP = 5;
 
     function clearRowHeightCache(){
         Object.keys(rowHeightCache).forEach(key=> delete rowHeightCache[key]);
     }
 
-    function getSkillRowHeight(treeId){
+    function getSkillMeasurements(treeId){
         if(rowHeightCache[treeId]){
             return rowHeightCache[treeId];
         }
 
-        const gap = 3; // keeps visible separation while making rows more compact
+        const gap = 0; // allow rows to sit directly against the card height without extra spacing
         const skills = data.skills.filter(s=>s.tree===treeId);
-        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:270px; padding:12px;"></div>');
+        const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:270px; padding:0;"></div>');
         $('body').append(probeTier);
 
         let maxHeight = 0;
+        const heights = {};
         const highestTier = getHighestTierForTree(treeId);
         skills.forEach(skill=>{
             const node = buildSkillNode(skill, highestTier);
             node.css({position:'relative', left:'auto', right:'auto', top:'auto'});
             probeTier.append(node);
-            maxHeight = Math.max(maxHeight, node.outerHeight(true));
+            const height = node.outerHeight(true);
+            heights[skill.id] = height;
+            maxHeight = Math.max(maxHeight, height);
             node.remove();
         });
 
@@ -277,14 +281,17 @@
         }
 
         probeTier.remove();
-        rowHeightCache[treeId] = maxHeight + gap;
+        const rowHeight = Math.ceil(maxHeight + gap);
+        rowHeightCache[treeId] = { rowHeight, heights, rowGap: ROW_GAP };
         return rowHeightCache[treeId];
     }
 
     function calculateLayoutForTree(treeId){
         const skills = data.skills.filter(s=>s.tree===treeId);
         const rows = {};
-        const rowHeight = getSkillRowHeight(treeId);
+        const measurements = getSkillMeasurements(treeId);
+        const rowHeight = measurements.rowHeight;
+        const rowGap = measurements.rowGap !== undefined ? measurements.rowGap : ROW_GAP;
         let nextRow = 0;
         let rowOwners = {};
         const preferredRows = {};
@@ -421,7 +428,33 @@
             }
         });
 
-        return { rows, totalRows: Math.max(1, nextRow), rowHeight };
+        // Remap rows to remove any gaps so the layout stays as compact as possible.
+        const usedRows = [...new Set(Object.values(rows).sort((a,b)=>a-b))];
+        if(usedRows.length){
+            const remap = {};
+            usedRows.forEach((row, index)=>{ remap[row] = index; });
+            Object.keys(rows).forEach(id => { rows[id] = remap[rows[id]]; });
+            nextRow = usedRows.length;
+        } else {
+            nextRow = 1;
+        }
+
+        const rowHeights = [];
+        skills.forEach(skill=>{
+            const row = rows[skill.id];
+            if(row === undefined) return;
+            const skillHeight = measurements.heights[skill.id] || rowHeight;
+            rowHeights[row] = Math.max(rowHeights[row] || 0, skillHeight);
+        });
+
+        const rowOffsets = [];
+        let totalHeight = 0;
+        for(let i=0;i<Math.max(1, rowHeights.length);i++){
+            rowOffsets[i] = totalHeight;
+            totalHeight += (rowHeights[i] || rowHeight) + rowGap;
+        }
+
+        return { rows, totalRows: Math.max(1, rowHeights.length || nextRow), rowHeight, rowOffsets, totalHeight };
     }
 
     function dataLabel(base){
