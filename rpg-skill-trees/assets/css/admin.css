@@ -118,3 +118,8 @@
 .rst-custom-req-table .description {
     margin-top: 6px;
 }
+
+.rst-custom-req-table .rst-tier-override select {
+    width: auto;
+    min-width: 120px;
+}
