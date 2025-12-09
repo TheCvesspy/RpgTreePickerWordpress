@@ -24,9 +24,9 @@
 .rpg-tree-list { margin-top:4px; }
 .rpg-tree-list label { display:block; margin-bottom:6px; color:#cbd5f5; }
 .rpg-point-list { display:flex; flex-direction:column; gap:8px; padding:0; margin:0; color:#e5e7eb; }
-.rpg-point-row { display:grid; grid-template-columns: 1fr 90px auto; align-items:center; gap:8px; background:#111827; border:1px solid #1f2937; border-radius:8px; padding:8px; }
+.rpg-point-row { display:grid; grid-template-columns: 1fr 110px auto; align-items:center; gap:8px; background:#111827; border:1px solid #1f2937; border-radius:8px; padding:8px; }
 .rpg-point-label { font-weight:600; color:#cbd5f5; }
-.rpg-point-values { font-variant-numeric:tabular-nums; text-align:center; }
+.rpg-point-values { font-variant-numeric:tabular-nums; text-align:center; justify-self:center; width:100%; }
 .rpg-point-actions { display:flex; gap:6px; justify-self:end; }
 .rpg-convert-btn { border:1px solid #1f2937; background:#0f172a; color:#cbd5f5; border-radius:6px; width:28px; height:28px; line-height:1; font-weight:bold; cursor:pointer; transition:all 0.15s ease; }
 .rpg-convert-btn:hover { background:#1d4ed8; color:#f8fafc; border-color:#1d4ed8; }

@@ -1,6 +1,6 @@
 <?php
 class RPG_Skill_Trees {
-    const VERSION = '1.4.11';
+    const VERSION = '1.5.0';
     const OPTION_KEY = 'rpg_skill_trees_settings';
     const BUILD_META_KEY = 'rpg_skill_trees_builds';
 
