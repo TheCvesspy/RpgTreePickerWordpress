@@ -318,6 +318,7 @@
             const singlePrereqs = [];
             const multiPrereqs = [];
             const noPrereqs = [];
+            const nextRowForPrereq = {};
 
             tierSkills(tier).forEach(skill=>{
                 if(skill.prereqs && skill.prereqs.length){
@@ -341,7 +342,9 @@
                     }
                     const baseRow = rows[prereqId] !== undefined ? rows[prereqId] : nextRow;
                     const owner = rowOwners[baseRow] !== undefined ? rowOwners[baseRow] : prereqId;
-                    assignRow(skill, baseRow, owner);
+                    const startRow = nextRowForPrereq[owner] !== undefined ? nextRowForPrereq[owner] : baseRow;
+                    assignRow(skill, startRow, owner);
+                    nextRowForPrereq[owner] = rows[skill.id] + 1;
                 });
 
             multiPrereqs
