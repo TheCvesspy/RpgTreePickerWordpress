@@ -342,7 +342,7 @@
                     }
                     const baseRow = rows[prereqId] !== undefined ? rows[prereqId] : nextRow;
                     const owner = rowOwners[baseRow] !== undefined ? rowOwners[baseRow] : prereqId;
-                    const startRow = nextRowForPrereq[owner] !== undefined ? nextRowForPrereq[owner] : baseRow;
+                    const startRow = nextRowForPrereq[owner] !== undefined ? nextRowForPrereq[owner] : baseRow + 1;
                     assignRow(skill, startRow, owner);
                     nextRowForPrereq[owner] = rows[skill.id] + 1;
                 });
