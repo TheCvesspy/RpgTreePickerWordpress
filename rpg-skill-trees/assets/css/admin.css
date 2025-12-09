@@ -85,3 +85,41 @@
 .rst-status--inactive {
     color: #b32d2e;
 }
+
+.rst-inline-list {
+    list-style: disc;
+    margin: 0;
+    padding-left: 18px;
+}
+
+.rst-inline-list li {
+    margin: 0;
+    padding: 0;
+}
+
+.rst-tree-tab-header {
+    margin-bottom: 0;
+}
+
+.rst-tree-tab-panel {
+    display: none;
+    margin-top: 12px;
+}
+
+.rst-tree-tab-panel.is-active {
+    display: block;
+}
+
+.rst-custom-req-table select {
+    width: 100%;
+    max-width: 100%;
+}
+
+.rst-custom-req-table .description {
+    margin-top: 6px;
+}
+
+.rst-custom-req-table .rst-tier-override select {
+    width: auto;
+    min-width: 120px;
+}

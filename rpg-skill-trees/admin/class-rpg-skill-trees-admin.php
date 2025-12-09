@@ -71,6 +71,18 @@ class Rpg_Skill_Trees_Admin {
         $icon = $editing ? get_post_meta($editing, 'rst_icon', true) : '';
         $color = $editing ? get_post_meta($editing, 'rst_color', true) : '';
         $active = $editing ? intval(get_post_meta($editing, 'rst_active', true)) : 1;
+        $custom_requirements = $editing ? (array) get_post_meta($editing, 'rst_custom_skill_requirements', true) : [];
+        $skills_for_tree = [];
+        if ($editing) {
+            $skills_for_tree = get_posts([
+                'post_type' => 'rpg_skill',
+                'numberposts' => -1,
+                'orderby' => 'title',
+                'order' => 'ASC',
+                'meta_key' => 'rst_tree_id',
+                'meta_value' => $editing,
+            ]);
+        }
         $trees = $this->get_trees();
         ?>
         <div class="wrap">
@@ -110,6 +122,65 @@ class Rpg_Skill_Trees_Admin {
                                     <p class="description"><?php esc_html_e('Inactive trees are hidden from the front-end builder.', 'rpg-skill-trees'); ?></p>
                                 </td>
                             </tr>
+                            <?php if ($editing): ?>
+                            <tr>
+                                <th><label><?php esc_html_e('Custom requirements per skill', 'rpg-skill-trees'); ?></label></th>
+                                <td>
+                                    <p class="description"><?php esc_html_e('Select a skill and override its required prerequisite for this tree only.', 'rpg-skill-trees'); ?></p>
+                                    <?php if (empty($skills_for_tree)): ?>
+                                        <p><em><?php esc_html_e('No skills are assigned to this tree yet.', 'rpg-skill-trees'); ?></em></p>
+                                    <?php else: ?>
+                                        <table class="widefat striped">
+                                            <thead>
+                                                <tr>
+                                                    <th><?php esc_html_e('Skill', 'rpg-skill-trees'); ?></th>
+                                                    <th><?php esc_html_e('Default requirements', 'rpg-skill-trees'); ?></th>
+                                                    <th><?php esc_html_e('Custom requirements in this tree', 'rpg-skill-trees'); ?></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($skills_for_tree as $skill_option): ?>
+                                                    <?php
+                                                    $selected_reqs = array_filter(array_map('intval', (array) ($custom_requirements[$skill_option->ID] ?? [])));
+                                                    $default_prereqs = array_filter(array_map('intval', (array) get_post_meta($skill_option->ID, 'rst_prereq_skills', true)));
+                                                    $default_labels = [];
+                                                    foreach ($skills_for_tree as $req_option) {
+                                                        if (in_array($req_option->ID, $default_prereqs, true)) {
+                                                            $default_labels[] = $req_option->post_title;
+                                                        }
+                                                    }
+                                                    ?>
+                                                    <tr>
+                                                        <td><?php echo esc_html($skill_option->post_title); ?></td>
+                                                        <td>
+                                                            <?php if (!empty($default_labels)): ?>
+                                                                <ul class="rst-inline-list">
+                                                                    <?php foreach ($default_labels as $label): ?>
+                                                                        <li><?php echo esc_html($label); ?></li>
+                                                                    <?php endforeach; ?>
+                                                                </ul>
+                                                            <?php else: ?>
+                                                                <em><?php esc_html_e('None', 'rpg-skill-trees'); ?></em>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td>
+                                                            <input type="hidden" name="custom_skill_requirements[<?php echo esc_attr($skill_option->ID); ?>][]" value="" />
+                                                            <select name="custom_skill_requirements[<?php echo esc_attr($skill_option->ID); ?>][]" multiple size="4">
+                                                                <?php foreach ($skills_for_tree as $req_option): ?>
+                                                                    <?php if ($req_option->ID === $skill_option->ID) { continue; } ?>
+                                                                    <option value="<?php echo esc_attr($req_option->ID); ?>" <?php selected(in_array($req_option->ID, $selected_reqs, true)); ?>><?php echo esc_html($req_option->post_title); ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                            <p class="description"><?php esc_html_e('Leave empty to use the skill\'s default prerequisites. Hold Ctrl/Cmd to select multiple.', 'rpg-skill-trees'); ?></p>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endif; ?>
                             <?php for ($i = 2; $i <= 4; $i++): ?>
                             <tr>
                                 <th><label for="rst_rule_<?php echo $i; ?>"><?php printf(esc_html__('Minimum Tier %1$d points before Tier %2$d unlocks', 'rpg-skill-trees'), $i-1, $i); ?></label></th>
@@ -244,15 +315,16 @@ class Rpg_Skill_Trees_Admin {
                 <div class="rst-column">
                     <h2><?php esc_html_e('Existing Skills', 'rpg-skill-trees'); ?></h2>
                     <table class="widefat">
-                        <thead><tr><th><?php esc_html_e('Name', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Tree', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Tier', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Cost', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Prerequisites', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Actions', 'rpg-skill-trees'); ?></th></tr></thead>
+                        <thead><tr><th><?php esc_html_e('Name', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Tree', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Tier', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Cost', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Sort Order', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Prerequisites', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Actions', 'rpg-skill-trees'); ?></th></tr></thead>
                         <tbody>
                         <?php foreach ($skills as $s): ?>
-                            <?php $meta = get_post_meta($s->ID); $tree_id = intval($meta['rst_tree_id'][0] ?? 0); $tree = $tree_id ? get_post($tree_id) : null; $pr = (array) maybe_unserialize($meta['rst_prereq_skills'][0] ?? []); ?>
+                            <?php $meta = get_post_meta($s->ID); $tree_id = intval($meta['rst_tree_id'][0] ?? 0); $tree = $tree_id ? get_post($tree_id) : null; $pr = (array) maybe_unserialize($meta['rst_prereq_skills'][0] ?? []); $sort_order = intval($meta['rst_sort_order'][0] ?? 0); ?>
                             <tr>
                                 <td><?php echo esc_html($s->post_title); ?></td>
                                 <td><?php echo $tree ? esc_html($tree->post_title) : __('Unknown', 'rpg-skill-trees'); ?></td>
                                 <td><?php echo intval($meta['rst_tier'][0] ?? 1); ?></td>
                                 <td><?php echo esc_html($meta['rst_cost'][0] ?? ''); ?></td>
+                                <td><?php echo esc_html($sort_order); ?></td>
                                 <td><?php echo $pr ? esc_html(implode(', ', array_map(function($id) { $p = get_post($id); return $p ? $p->post_title : ''; }, $pr))) : __('None', 'rpg-skill-trees'); ?></td>
                                 <td>
                                     <a href="<?php echo esc_url(add_query_arg(['page' => 'rpg-skill-trees-skills', 'skill_id' => $s->ID], admin_url('admin.php'))); ?>" class="button">Edit</a>
@@ -344,6 +416,17 @@ class Rpg_Skill_Trees_Admin {
         update_post_meta($tree_id, 'rst_icon', esc_url_raw($_POST['icon'] ?? ''));
         update_post_meta($tree_id, 'rst_color', sanitize_text_field($_POST['color'] ?? ''));
         update_post_meta($tree_id, 'rst_active', isset($_POST['active']) ? 1 : 0);
+        $custom_skill_reqs = [];
+        if (isset($_POST['custom_skill_requirements']) && is_array($_POST['custom_skill_requirements'])) {
+            foreach ($_POST['custom_skill_requirements'] as $skill_id => $req_ids) {
+                $skill_id = intval($skill_id);
+                $req_ids = array_filter(array_map('intval', (array) $req_ids));
+                if ($skill_id > 0 && !empty($req_ids)) {
+                    $custom_skill_reqs[$skill_id] = array_values(array_unique($req_ids));
+                }
+            }
+        }
+        update_post_meta($tree_id, 'rst_custom_skill_requirements', $custom_skill_reqs);
         wp_safe_redirect(admin_url('admin.php?page=rpg-skill-trees&updated=1'));
         exit;
     }
