@@ -184,13 +184,13 @@ class Rpg_Skill_Trees_Public {
         $tree_spent = [];
         foreach ($selected_skills as $id) {
             if (!isset($skills[$id])) {
-                return __('Unknown skill selected', 'rpg-skill-trees');
+                return __('Vybrána neznámá schopnost.', 'rpg-skill-trees');
             }
             $skill = $skills[$id];
             // prerequisites
             foreach ($skill['prerequisites'] as $pr) {
                 if (!in_array($pr, $selected_skills, false)) {
-                    return sprintf(__('Missing prerequisite for %s', 'rpg-skill-trees'), $skill['name']);
+                    return sprintf(__('Chybí požadavek pro %s', 'rpg-skill-trees'), $skill['name']);
                 }
             }
             $tier = $skill['tier'];
@@ -198,13 +198,13 @@ class Rpg_Skill_Trees_Public {
             $tree_spent[$tree_id][$tier] = ($tree_spent[$tree_id][$tier] ?? 0) + $skill['cost'];
             $requirement = floatval($trees[$tree_id]['tier_rules'][$tier] ?? 0);
             if ($tier > 1 && ($tree_spent[$tree_id][$tier-1] ?? 0) < $requirement) {
-                return sprintf(__('Tier requirement not met for %s', 'rpg-skill-trees'), $skill['name']);
+                return sprintf(__('Požadavek úrovně nesplněn pro %s', 'rpg-skill-trees'), $skill['name']);
             }
             // tier point spend with conversion
             $cost = $skill['cost'];
             $result = $this->spend_with_conversion($remaining, $cost, $tier, $settings['conversions']);
             if (!$result['success']) {
-                return sprintf(__('Not enough points for %s', 'rpg-skill-trees'), $skill['name']);
+                return sprintf(__('Nedostatek bodů pro %s', 'rpg-skill-trees'), $skill['name']);
             }
             $remaining = $result['remaining'];
         }

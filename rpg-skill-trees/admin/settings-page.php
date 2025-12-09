@@ -78,6 +78,60 @@ $settings = isset($settings) ? $settings : [];
                 </tr>
             </tbody>
         </table>
+
+        <h2><?php esc_html_e('Color Settings', 'rpg-skill-trees'); ?></h2>
+        <table class="form-table">
+            <tbody>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_bg]" value="<?php echo esc_attr($settings['colors']['button_bg'] ?? '#1f2937'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button hover/primary background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_hover]" value="<?php echo esc_attr($settings['colors']['button_hover'] ?? '#2563eb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_text]" value="<?php echo esc_attr($settings['colors']['button_text'] ?? '#f9fafb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_border]" value="<?php echo esc_attr($settings['colors']['button_border'] ?? '#374151'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Skill card background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_bg]" value="<?php echo esc_attr($settings['colors']['skill_bg'] ?? '#1f2937'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Skill card border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_border]" value="<?php echo esc_attr($settings['colors']['skill_border'] ?? '#374151'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Skill card text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_text]" value="<?php echo esc_attr($settings['colors']['skill_text'] ?? '#f9fafb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Tooltip text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_tooltip]" value="<?php echo esc_attr($settings['colors']['skill_tooltip'] ?? '#cbd5e1'); ?>" /></td>
+                </tr>
+                    <tr>
+                        <th scope="row"><?php esc_html_e('Prerequisite text', 'rpg-skill-trees'); ?></th>
+                        <td><input type="color" name="colors[skill_prereq]" value="<?php echo esc_attr($settings['colors']['skill_prereq'] ?? '#fbbf24'); ?>" /></td>
+                    </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Selected card background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_selected_bg]" value="<?php echo esc_attr($settings['colors']['skill_selected_bg'] ?? '#0f172a'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Selected/hover borders', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_selected_border]" value="<?php echo esc_attr($settings['colors']['skill_selected_border'] ?? '#60a5fa'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Hover border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_hover_border]" value="<?php echo esc_attr($settings['colors']['skill_hover_border'] ?? '#60a5fa'); ?>" /></td>
+                </tr>
+            </tbody>
+        </table>
         <?php submit_button(); ?>
     </form>
 </div>

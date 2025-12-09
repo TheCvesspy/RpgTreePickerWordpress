@@ -560,13 +560,14 @@
         }
         const { amount, received } = getConversionStep(rule);
         if(!amount || !received){
-            showMessage('Conversion not allowed for those tiers.');
+            showMessage(data.i18n && data.i18n.conversionNotAllowed ? data.i18n.conversionNotAllowed : 'Konverze pro tyto úrovně není povolena.');
             return;
         }
         const {totals, spent} = calculatePoints();
         const available = (totals[fromTier]||0) - (spent[fromTier]||0);
         if(amount > available){
-            showMessage('Not enough points to convert from Tier '+fromTier+'.');
+            const prefix = data.i18n && data.i18n.conversionInsufficient ? data.i18n.conversionInsufficient : 'Nedostatek bodů pro konverzi z úrovně ';
+            showMessage(prefix + fromTier + '.');
             return;
         }
         userConversions.push({from: fromTier, to: toTier, amount, received});
@@ -597,7 +598,7 @@
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
             script.onload = ()=> resolve(window.html2canvas);
-            script.onerror = ()=> reject(new Error('html2canvas failed to load'));
+            script.onerror = ()=> reject(new Error('Načtení knihovny html2canvas se nezdařilo'));
             document.head.appendChild(script);
         });
         return html2CanvasPromise;

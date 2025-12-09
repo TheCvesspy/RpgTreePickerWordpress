@@ -1,6 +1,6 @@
 <?php
 class RPG_Skill_Trees {
-    const VERSION = '1.0.0';
+    const VERSION = '1.4.10';
     const OPTION_KEY = 'rpg_skill_trees_settings';
     const BUILD_META_KEY = 'rpg_skill_trees_builds';
 
@@ -221,6 +221,20 @@ class RPG_Skill_Trees {
                 'tooltip' => isset($_POST['font_sizes']['tooltip']) ? floatval($_POST['font_sizes']['tooltip']) : 12,
                 'requirements' => isset($_POST['font_sizes']['requirements']) ? floatval($_POST['font_sizes']['requirements']) : 12,
             ];
+            $settings['colors'] = [
+                'button_bg' => sanitize_hex_color($_POST['colors']['button_bg'] ?? '') ?: '#1f2937',
+                'button_text' => sanitize_hex_color($_POST['colors']['button_text'] ?? '') ?: '#f9fafb',
+                'button_border' => sanitize_hex_color($_POST['colors']['button_border'] ?? '') ?: '#374151',
+                'button_hover' => sanitize_hex_color($_POST['colors']['button_hover'] ?? '') ?: '#2563eb',
+                'skill_bg' => sanitize_hex_color($_POST['colors']['skill_bg'] ?? '') ?: '#1f2937',
+                'skill_border' => sanitize_hex_color($_POST['colors']['skill_border'] ?? '') ?: '#374151',
+                'skill_text' => sanitize_hex_color($_POST['colors']['skill_text'] ?? '') ?: '#f9fafb',
+                'skill_tooltip' => sanitize_hex_color($_POST['colors']['skill_tooltip'] ?? '') ?: '#cbd5e1',
+                'skill_prereq' => sanitize_hex_color($_POST['colors']['skill_prereq'] ?? '') ?: '#fbbf24',
+                'skill_selected_bg' => sanitize_hex_color($_POST['colors']['skill_selected_bg'] ?? '') ?: '#0f172a',
+                'skill_selected_border' => sanitize_hex_color($_POST['colors']['skill_selected_border'] ?? '') ?: '#60a5fa',
+                'skill_hover_border' => sanitize_hex_color($_POST['colors']['skill_hover_border'] ?? '') ?: '#60a5fa',
+            ];
             update_option(self::OPTION_KEY, $settings);
             echo '<div class="updated"><p>' . esc_html__('Settings saved.', 'rpg-skill-trees') . '</p></div>';
         }
@@ -254,9 +268,19 @@ class RPG_Skill_Trees {
             $title_size = isset($settings['font_sizes']['title']) ? max(1, floatval($settings['font_sizes']['title'])) : 14;
             $tooltip_size = isset($settings['font_sizes']['tooltip']) ? max(1, floatval($settings['font_sizes']['tooltip'])) : 12;
             $requirements_size = isset($settings['font_sizes']['requirements']) ? max(1, floatval($settings['font_sizes']['requirements'])) : 12;
+            $colors = isset($settings['colors']) ? $settings['colors'] : [];
             $inline_styles = '.rpg-skill-name{font-size:' . $title_size . 'px;}'
                 . '.rpg-skill-tooltip,.rpg-tooltip-effect{font-size:' . $tooltip_size . 'px;}'
-                . '.rpg-skill-prereqs{font-size:' . $requirements_size . 'px;}';
+                . '.rpg-skill-prereqs{font-size:' . $requirements_size . 'px;}'
+                . '.rpg-skill{background:' . esc_html($colors['skill_bg']) . ';border-color:' . esc_html($colors['skill_border']) . ';color:' . esc_html($colors['skill_text']) . ';}'
+                . '.rpg-skill:hover{border-color:' . esc_html($colors['skill_hover_border']) . ';}'
+                . '.rpg-skill.rpg-selected{background:' . esc_html($colors['skill_selected_bg']) . ';border-color:' . esc_html($colors['skill_selected_border']) . ';box-shadow:0 0 0 2px ' . esc_html($colors['skill_selected_border']) . ';}'
+                . '.rpg-skill-name{color:' . esc_html($colors['skill_text']) . ';}'
+                . '.rpg-skill-tooltip,.rpg-tooltip-effect{color:' . esc_html($colors['skill_tooltip']) . ';}'
+                . '.rpg-skill-prereqs{color:' . esc_html($colors['skill_prereq']) . ';}'
+                . '.rpg-skill-trees-builder .button,.rpg-skill-trees-builder .button-primary{background:' . esc_html($colors['button_bg']) . ';color:' . esc_html($colors['button_text']) . ';border-color:' . esc_html($colors['button_border']) . ';}'
+                . '.rpg-skill-trees-builder .button:hover,.rpg-skill-trees-builder .button-primary:hover{background:' . esc_html($colors['button_hover']) . ';color:' . esc_html($colors['button_text']) . ';border-color:' . esc_html($colors['button_hover']) . ';}'
+                . '.rpg-skill-trees-builder .button-primary{background:' . esc_html($colors['button_hover']) . ';border-color:' . esc_html($colors['button_hover']) . ';}';
             wp_add_inline_style('rpg-skill-trees-public', $inline_styles);
             wp_localize_script('rpg-skill-trees-public', 'RPGSkillTreesData', $this->get_public_data());
         }
@@ -314,13 +338,16 @@ class RPG_Skill_Trees {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('rpg_skill_trees_nonce'),
             'i18n' => [
-                'insufficientPoints' => __('Not enough points for this tier.', 'rpg-skill-trees'),
-                'lockedByTier' => __('Tier requirements not met.', 'rpg-skill-trees'),
+                'insufficientPoints' => __('Nedostatek bodů pro tuto úroveň.', 'rpg-skill-trees'),
+                'lockedByTier' => __('Nesplněné požadavky úrovně.', 'rpg-skill-trees'),
                 'requiresSkills' => __('Vyžaduje: ', 'rpg-skill-trees'),
-                'saved' => __('Build saved', 'rpg-skill-trees'),
-                'loginRequired' => __('You must be logged in to save builds.', 'rpg-skill-trees'),
-                'treeRequired' => __('Select the related tree first.', 'rpg-skill-trees'),
-                'tierRemovalBlocked' => __('Removing this skill would break tier requirements for selected higher tiers.', 'rpg-skill-trees'),
+                'saved' => __('Build uložen', 'rpg-skill-trees'),
+                'loginRequired' => __('Pro uložení buildu se musíte přihlásit.', 'rpg-skill-trees'),
+                'treeRequired' => __('Nejprve vyberte příslušný strom.', 'rpg-skill-trees'),
+                'tierRemovalBlocked' => __('Odebrání této schopnosti by narušilo požadavky vyšších úrovní.', 'rpg-skill-trees'),
+                'exportError' => __('Export se nezdařil.', 'rpg-skill-trees'),
+                'conversionNotAllowed' => __('Konverze pro tyto úrovně není povolena.', 'rpg-skill-trees'),
+                'conversionInsufficient' => __('Nedostatek bodů pro konverzi z úrovně ', 'rpg-skill-trees'),
             ],
         ];
     }
@@ -335,11 +362,11 @@ class RPG_Skill_Trees {
         check_ajax_referer('rpg_skill_trees_nonce', 'nonce');
         $settings = $this->get_settings();
         if ($settings['require_login'] && !is_user_logged_in()) {
-            wp_send_json_error(__('Login required', 'rpg-skill-trees'));
+            wp_send_json_error(__('Přihlášení je vyžadováno.', 'rpg-skill-trees'));
         }
         $build = isset($_POST['build']) ? json_decode(stripslashes($_POST['build']), true) : [];
         if (!is_array($build)) {
-            wp_send_json_error(__('Invalid build', 'rpg-skill-trees'));
+            wp_send_json_error(__('Neplatný build.', 'rpg-skill-trees'));
         }
         $validation = $this->validate_build($build, $settings);
         if (!$validation['valid']) {
@@ -357,10 +384,10 @@ class RPG_Skill_Trees {
             } else {
                 update_user_meta($user_id, self::BUILD_META_KEY, $build);
             }
-            wp_send_json_success(__('Build saved', 'rpg-skill-trees'));
+            wp_send_json_success(__('Build uložen', 'rpg-skill-trees'));
         } else {
             set_transient('rpg_skill_trees_guest_' . md5($_SERVER['REMOTE_ADDR']), $build, HOUR_IN_SECONDS);
-            wp_send_json_success(__('Build saved locally', 'rpg-skill-trees'));
+            wp_send_json_success(__('Build uložen lokálně', 'rpg-skill-trees'));
         }
     }
 
@@ -429,7 +456,7 @@ class RPG_Skill_Trees {
             }
 
             if (!isset($skill_map[$instance_key])) {
-                return ['valid' => false, 'message' => __('Unknown skill in build.', 'rpg-skill-trees')];
+                return ['valid' => false, 'message' => __('Neznámá schopnost v buildu.', 'rpg-skill-trees')];
             }
             $selected_skills[] = $instance_key;
         }
@@ -445,20 +472,20 @@ class RPG_Skill_Trees {
         $tree_spent = [];
         foreach ($selected_skills as $skill_instance) {
             if (!isset($skill_map[$skill_instance])) {
-                return ['valid' => false, 'message' => __('Unknown skill in build.', 'rpg-skill-trees')];
+                return ['valid' => false, 'message' => __('Neznámá schopnost v buildu.', 'rpg-skill-trees')];
             }
             $skill = $skill_map[$skill_instance];
             if (!in_array($skill['tree'], $selected_trees, true)) {
-                return ['valid' => false, 'message' => __('Skill tree not selected.', 'rpg-skill-trees')];
+                return ['valid' => false, 'message' => __('Strom schopností není vybrán.', 'rpg-skill-trees')];
             }
             if (!$this->prerequisites_met_server($skill['prereqs'], $selected_skills, $skill['tree'])) {
-                return ['valid' => false, 'message' => __('Prerequisites missing.', 'rpg-skill-trees')];
+                return ['valid' => false, 'message' => __('Chybí požadované schopnosti.', 'rpg-skill-trees')];
             }
             if (!$this->tier_requirement_met_server($skill, $tree_spent)) {
-                return ['valid' => false, 'message' => __('Tier requirement not met.', 'rpg-skill-trees')];
+                return ['valid' => false, 'message' => __('Nesplněný požadavek úrovně.', 'rpg-skill-trees')];
             }
             if (!$this->has_points_for_skill_server($skill, $totals, $spent, $settings)) {
-                return ['valid' => false, 'message' => __('Not enough points.', 'rpg-skill-trees')];
+                return ['valid' => false, 'message' => __('Nedostatek bodů.', 'rpg-skill-trees')];
             }
             $spent[$skill['tier']] += $skill['cost'];
             if (!isset($tree_spent[$skill['tree']])) {
@@ -540,10 +567,25 @@ class RPG_Skill_Trees {
                 'tooltip' => 12,
                 'requirements' => 12,
             ],
+            'colors' => [
+                'button_bg' => '#1f2937',
+                'button_text' => '#f9fafb',
+                'button_border' => '#374151',
+                'button_hover' => '#2563eb',
+                'skill_bg' => '#1f2937',
+                'skill_border' => '#374151',
+                'skill_text' => '#f9fafb',
+                'skill_tooltip' => '#cbd5e1',
+                'skill_prereq' => '#fbbf24',
+                'skill_selected_bg' => '#0f172a',
+                'skill_selected_border' => '#60a5fa',
+                'skill_hover_border' => '#60a5fa',
+            ],
         ];
         $settings = get_option(self::OPTION_KEY, []);
         $settings = wp_parse_args($settings, $defaults);
         $settings['font_sizes'] = wp_parse_args($settings['font_sizes'], $defaults['font_sizes']);
+        $settings['colors'] = wp_parse_args($settings['colors'], $defaults['colors']);
         return $settings;
     }
 
