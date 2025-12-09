@@ -101,6 +101,18 @@ $settings = isset($settings) ? $settings : [];
         <table class="form-table">
             <tbody>
                 <tr>
+                    <th colspan="2"><h3><?php esc_html_e('Header', 'rpg-skill-trees'); ?></h3></th>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Section title text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[header_title]" value="<?php echo esc_attr($settings['colors']['header_title'] ?? '#cbd5f5'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Header label text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[header_label]" value="<?php echo esc_attr($settings['colors']['header_label'] ?? '#cbd5f5'); ?>" /></td>
+                </tr>
+
+                <tr>
                     <th colspan="2"><h3><?php esc_html_e('Layout & Panels', 'rpg-skill-trees'); ?></h3></th>
                 </tr>
                 <tr>
