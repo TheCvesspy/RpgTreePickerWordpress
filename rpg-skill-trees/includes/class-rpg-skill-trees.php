@@ -230,6 +230,8 @@ class RPG_Skill_Trees {
                 'layout_bg' => sanitize_hex_color($_POST['colors']['layout_bg'] ?? '') ?: '#0b1021',
                 'layout_border' => sanitize_hex_color($_POST['colors']['layout_border'] ?? '') ?: '#1f2937',
                 'layout_text' => sanitize_hex_color($_POST['colors']['layout_text'] ?? '') ?: '#e5e7eb',
+                'header_title' => sanitize_hex_color($_POST['colors']['header_title'] ?? '') ?: '#cbd5f5',
+                'header_label' => sanitize_hex_color($_POST['colors']['header_label'] ?? '') ?: '#cbd5f5',
                 'tier_bg' => sanitize_hex_color($_POST['colors']['tier_bg'] ?? '') ?: '#111827',
                 'tier_border' => sanitize_hex_color($_POST['colors']['tier_border'] ?? '') ?: '#1f2937',
                 'tier_title' => sanitize_hex_color($_POST['colors']['tier_title'] ?? '') ?: '#93c5fd',
@@ -293,8 +295,8 @@ class RPG_Skill_Trees {
             $header_message_size = isset($settings['header_font_sizes']['message']) ? max(1, floatval($settings['header_font_sizes']['message'])) : 13;
             $colors = isset($settings['colors']) ? $settings['colors'] : [];
             $inline_styles = '.rpg-skill-trees-builder{background:' . esc_html($colors['layout_bg']) . ';border-color:' . esc_html($colors['layout_border']) . ';color:' . esc_html($colors['layout_text']) . ';}'
-                . '.rpg-section-title{font-size:' . $header_title_size . 'px;}'
-                . '.rpg-tree-list label,.rpg-rules-toggle{font-size:' . $header_label_size . 'px;}'
+                . '.rpg-section-title{font-size:' . $header_title_size . 'px;color:' . esc_html($colors['header_title']) . ';}'
+                . '.rpg-tree-list label,.rpg-rules-toggle{font-size:' . $header_label_size . 'px;color:' . esc_html($colors['header_label']) . ';}'
                 . '.rpg-builder-messages{font-size:' . $header_message_size . 'px;}'
                 . '.rpg-tree>h3,.rpg-tier-title{color:' . esc_html($colors['tier_title']) . ';}'
                 . '.rpg-tier{background:' . esc_html($colors['tier_bg']) . ';border-color:' . esc_html($colors['tier_border']) . ';}'
@@ -614,6 +616,8 @@ class RPG_Skill_Trees {
                 'layout_bg' => '#0b1021',
                 'layout_border' => '#1f2937',
                 'layout_text' => '#e5e7eb',
+                'header_title' => '#cbd5f5',
+                'header_label' => '#cbd5f5',
                 'tier_bg' => '#111827',
                 'tier_border' => '#1f2937',
                 'tier_title' => '#93c5fd',
