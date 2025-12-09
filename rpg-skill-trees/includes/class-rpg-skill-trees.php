@@ -221,6 +221,11 @@ class RPG_Skill_Trees {
                 'tooltip' => isset($_POST['font_sizes']['tooltip']) ? floatval($_POST['font_sizes']['tooltip']) : 12,
                 'requirements' => isset($_POST['font_sizes']['requirements']) ? floatval($_POST['font_sizes']['requirements']) : 12,
             ];
+            $settings['header_font_sizes'] = [
+                'title' => isset($_POST['header_font_sizes']['title']) ? floatval($_POST['header_font_sizes']['title']) : 18,
+                'label' => isset($_POST['header_font_sizes']['label']) ? floatval($_POST['header_font_sizes']['label']) : 13,
+                'message' => isset($_POST['header_font_sizes']['message']) ? floatval($_POST['header_font_sizes']['message']) : 13,
+            ];
             $settings['colors'] = [
                 'layout_bg' => sanitize_hex_color($_POST['colors']['layout_bg'] ?? '') ?: '#0b1021',
                 'layout_border' => sanitize_hex_color($_POST['colors']['layout_border'] ?? '') ?: '#1f2937',
@@ -280,8 +285,14 @@ class RPG_Skill_Trees {
             $title_size = isset($settings['font_sizes']['title']) ? max(1, floatval($settings['font_sizes']['title'])) : 14;
             $tooltip_size = isset($settings['font_sizes']['tooltip']) ? max(1, floatval($settings['font_sizes']['tooltip'])) : 12;
             $requirements_size = isset($settings['font_sizes']['requirements']) ? max(1, floatval($settings['font_sizes']['requirements'])) : 12;
+            $header_title_size = isset($settings['header_font_sizes']['title']) ? max(1, floatval($settings['header_font_sizes']['title'])) : 18;
+            $header_label_size = isset($settings['header_font_sizes']['label']) ? max(1, floatval($settings['header_font_sizes']['label'])) : 13;
+            $header_message_size = isset($settings['header_font_sizes']['message']) ? max(1, floatval($settings['header_font_sizes']['message'])) : 13;
             $colors = isset($settings['colors']) ? $settings['colors'] : [];
             $inline_styles = '.rpg-skill-trees-builder{background:' . esc_html($colors['layout_bg']) . ';border-color:' . esc_html($colors['layout_border']) . ';color:' . esc_html($colors['layout_text']) . ';}'
+                . '.rpg-section-title{font-size:' . $header_title_size . 'px;}'
+                . '.rpg-tree-list label,.rpg-rules-toggle{font-size:' . $header_label_size . 'px;}'
+                . '.rpg-builder-messages{font-size:' . $header_message_size . 'px;}'
                 . '.rpg-tree>h3,.rpg-tier-title{color:' . esc_html($colors['tier_title']) . ';}'
                 . '.rpg-tier{background:' . esc_html($colors['tier_bg']) . ';border-color:' . esc_html($colors['tier_border']) . ';}'
                 . '.rpg-skill-name{font-size:' . $title_size . 'px;}'
@@ -587,6 +598,11 @@ class RPG_Skill_Trees {
                 'tooltip' => 12,
                 'requirements' => 12,
             ],
+            'header_font_sizes' => [
+                'title' => 18,
+                'label' => 13,
+                'message' => 13,
+            ],
             'colors' => [
                 'layout_bg' => '#0b1021',
                 'layout_border' => '#1f2937',
@@ -617,6 +633,7 @@ class RPG_Skill_Trees {
         $settings = get_option(self::OPTION_KEY, []);
         $settings = wp_parse_args($settings, $defaults);
         $settings['font_sizes'] = wp_parse_args($settings['font_sizes'], $defaults['font_sizes']);
+        $settings['header_font_sizes'] = wp_parse_args($settings['header_font_sizes'], $defaults['header_font_sizes']);
         $settings['colors'] = wp_parse_args($settings['colors'], $defaults['colors']);
         return $settings;
     }

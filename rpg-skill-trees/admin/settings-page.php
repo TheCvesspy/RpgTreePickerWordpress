@@ -61,6 +61,24 @@ $settings = isset($settings) ? $settings : [];
             </tbody>
         </table>
 
+        <h2><?php esc_html_e('Header Typography', 'rpg-skill-trees'); ?></h2>
+        <table class="form-table">
+            <tbody>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Header title font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="header_font_sizes[title]" value="<?php echo esc_attr($settings['header_font_sizes']['title'] ?? 18); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Header labels font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="header_font_sizes[label]" value="<?php echo esc_attr($settings['header_font_sizes']['label'] ?? 13); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Message font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="header_font_sizes[message]" value="<?php echo esc_attr($settings['header_font_sizes']['message'] ?? 13); ?>" /></td>
+                </tr>
+            </tbody>
+        </table>
+
         <h2><?php esc_html_e('Skill Card Typography', 'rpg-skill-trees'); ?></h2>
         <table class="form-table">
             <tbody>

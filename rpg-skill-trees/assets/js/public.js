@@ -517,7 +517,6 @@
         const summary = $('#rpg-point-summary');
         summary.empty();
         const {baseTotals, totals, spent} = calculatePoints();
-        summary.append('<h3>'+dataLabel('Points')+'</h3>');
 
         const list = $('<div class="rpg-point-list"></div>');
         for(let t=1;t<=4;t++){
