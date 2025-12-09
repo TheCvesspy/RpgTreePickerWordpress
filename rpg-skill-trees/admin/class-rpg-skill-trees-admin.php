@@ -134,21 +134,22 @@ class Rpg_Skill_Trees_Admin {
                                             <thead>
                                                 <tr>
                                                     <th><?php esc_html_e('Skill', 'rpg-skill-trees'); ?></th>
-                                                    <th><?php esc_html_e('Custom requirement', 'rpg-skill-trees'); ?></th>
+                                                    <th><?php esc_html_e('Custom requirements', 'rpg-skill-trees'); ?></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($skills_for_tree as $skill_option): ?>
-                                                    <?php $selected_req = intval($custom_requirements[$skill_option->ID] ?? 0); ?>
+                                                    <?php $selected_reqs = array_filter(array_map('intval', (array) ($custom_requirements[$skill_option->ID] ?? []))); ?>
                                                     <tr>
                                                         <td><?php echo esc_html($skill_option->post_title); ?></td>
                                                         <td>
-                                                            <select name="custom_skill_requirements[<?php echo esc_attr($skill_option->ID); ?>]">
-                                                                <option value=""><?php esc_html_e('Use skill default', 'rpg-skill-trees'); ?></option>
+                                                            <input type="hidden" name="custom_skill_requirements[<?php echo esc_attr($skill_option->ID); ?>][]" value="" />
+                                                            <select name="custom_skill_requirements[<?php echo esc_attr($skill_option->ID); ?>][]" multiple size="4">
                                                                 <?php foreach ($skills_for_tree as $req_option): ?>
-                                                                    <option value="<?php echo esc_attr($req_option->ID); ?>" <?php selected($selected_req, $req_option->ID); ?>><?php echo esc_html($req_option->post_title); ?></option>
+                                                                    <option value="<?php echo esc_attr($req_option->ID); ?>" <?php selected(in_array($req_option->ID, $selected_reqs, true)); ?>><?php echo esc_html($req_option->post_title); ?></option>
                                                                 <?php endforeach; ?>
                                                             </select>
+                                                            <p class="description"><?php esc_html_e('Leave empty to use the skill\'s default prerequisites. Hold Ctrl/Cmd to select multiple.', 'rpg-skill-trees'); ?></p>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
@@ -395,11 +396,11 @@ class Rpg_Skill_Trees_Admin {
         update_post_meta($tree_id, 'rst_active', isset($_POST['active']) ? 1 : 0);
         $custom_skill_reqs = [];
         if (isset($_POST['custom_skill_requirements']) && is_array($_POST['custom_skill_requirements'])) {
-            foreach ($_POST['custom_skill_requirements'] as $skill_id => $req_id) {
+            foreach ($_POST['custom_skill_requirements'] as $skill_id => $req_ids) {
                 $skill_id = intval($skill_id);
-                $req_id = intval($req_id);
-                if ($skill_id > 0 && $req_id > 0) {
-                    $custom_skill_reqs[$skill_id] = $req_id;
+                $req_ids = array_filter(array_map('intval', (array) $req_ids));
+                if ($skill_id > 0 && !empty($req_ids)) {
+                    $custom_skill_reqs[$skill_id] = array_values(array_unique($req_ids));
                 }
             }
         }

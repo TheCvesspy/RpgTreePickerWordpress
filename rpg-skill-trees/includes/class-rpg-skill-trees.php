@@ -335,13 +335,23 @@ class RPG_Skill_Trees {
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
         $tree_data = [];
         foreach ($trees as $tree) {
+                $custom_skill_reqs_raw = (array) get_post_meta($tree->ID, 'rst_custom_skill_requirements', true);
+                $custom_skill_reqs = [];
+                foreach ($custom_skill_reqs_raw as $skill_id => $req_values) {
+                    $skill_id = intval($skill_id);
+                    $req_list = array_filter(array_map('intval', (array) $req_values));
+                    if ($skill_id > 0 && !empty($req_list)) {
+                        $custom_skill_reqs[$skill_id] = array_values(array_unique($req_list));
+                    }
+                }
+
                 $tree_data[$tree->ID] = [
                     'id' => $tree->ID,
                     'name' => $tree->post_title,
                     'description' => wp_kses_post($tree->post_content),
                     'icon' => esc_url(get_post_meta($tree->ID, '_rpg_icon', true)),
                     'tier_requirements' => (array) get_post_meta($tree->ID, '_rpg_tier_requirements', true),
-                    'custom_skill_requirements' => array_map('intval', (array) get_post_meta($tree->ID, 'rst_custom_skill_requirements', true)),
+                    'custom_skill_requirements' => $custom_skill_reqs,
                 ];
             }
             $skill_data = [];
@@ -359,9 +369,9 @@ class RPG_Skill_Trees {
                 $tree_custom_reqs = isset($tree_data[$tree_id]['custom_skill_requirements']) ? (array) $tree_data[$tree_id]['custom_skill_requirements'] : [];
                 $prereqs = (array) get_post_meta($skill->ID, '_rpg_prereqs', true);
                 if (!empty($tree_custom_reqs[$skill->ID])) {
-                    $override = intval($tree_custom_reqs[$skill->ID]);
-                    if ($override > 0) {
-                        $prereqs = [$override];
+                    $override_prereqs = array_filter(array_map('intval', (array) $tree_custom_reqs[$skill->ID]));
+                    if (!empty($override_prereqs)) {
+                        $prereqs = array_values(array_unique($override_prereqs));
                     }
                 }
                 $skill_data[] = [
@@ -473,16 +483,25 @@ class RPG_Skill_Trees {
                     continue;
                 }
                 if (!isset($tree_overrides[$tree_id])) {
+                    $custom_skill_reqs_raw = (array) get_post_meta($tree_id, 'rst_custom_skill_requirements', true);
+                    $custom_skill_reqs = [];
+                    foreach ($custom_skill_reqs_raw as $custom_skill_id => $req_values) {
+                        $custom_skill_id = intval($custom_skill_id);
+                        $req_list = array_filter(array_map('intval', (array) $req_values));
+                        if ($custom_skill_id > 0 && !empty($req_list)) {
+                            $custom_skill_reqs[$custom_skill_id] = array_values(array_unique($req_list));
+                        }
+                    }
                     $tree_overrides[$tree_id] = [
-                        'custom_skill_requirements' => array_map('intval', (array) get_post_meta($tree_id, 'rst_custom_skill_requirements', true)),
+                        'custom_skill_requirements' => $custom_skill_reqs,
                     ];
                 }
                 $prereqs = (array) get_post_meta($skill->ID, '_rpg_prereqs', true);
                 $custom_prereqs = $tree_overrides[$tree_id]['custom_skill_requirements'] ?? [];
                 if (!empty($custom_prereqs[$skill->ID])) {
-                    $override = intval($custom_prereqs[$skill->ID]);
-                    if ($override > 0) {
-                        $prereqs = [$override];
+                    $override_prereqs = array_filter(array_map('intval', (array) $custom_prereqs[$skill->ID]));
+                    if (!empty($override_prereqs)) {
+                        $prereqs = array_values(array_unique($override_prereqs));
                     }
                 }
                 $instance_key = $skill->ID . ':' . $tree_id;
