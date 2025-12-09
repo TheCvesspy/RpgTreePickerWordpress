@@ -323,7 +323,7 @@ class Rpg_Skill_Trees_Admin {
 
     public function handle_save_tree() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Not allowed', 'rpg-skill-trees'));
+            wp_die(__('Nepovoleno', 'rpg-skill-trees'));
         }
         check_admin_referer('rst_save_tree');
         $tree_id = isset($_POST['tree_id']) ? intval($_POST['tree_id']) : 0;
@@ -350,7 +350,7 @@ class Rpg_Skill_Trees_Admin {
 
     public function handle_delete_tree() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Not allowed', 'rpg-skill-trees'));
+            wp_die(__('Nepovoleno', 'rpg-skill-trees'));
         }
         check_admin_referer('rst_delete_tree');
         $tree_id = intval($_POST['tree_id'] ?? 0);
@@ -363,7 +363,7 @@ class Rpg_Skill_Trees_Admin {
 
     public function handle_save_skill() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Not allowed', 'rpg-skill-trees'));
+            wp_die(__('Nepovoleno', 'rpg-skill-trees'));
         }
         check_admin_referer('rst_save_skill');
         $skill_id = isset($_POST['skill_id']) ? intval($_POST['skill_id']) : 0;
@@ -395,7 +395,7 @@ class Rpg_Skill_Trees_Admin {
 
     public function handle_delete_skill() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Not allowed', 'rpg-skill-trees'));
+            wp_die(__('Nepovoleno', 'rpg-skill-trees'));
         }
         check_admin_referer('rst_delete_skill');
         $skill_id = intval($_POST['skill_id'] ?? 0);
@@ -408,7 +408,7 @@ class Rpg_Skill_Trees_Admin {
 
     public function handle_save_settings() {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Not allowed', 'rpg-skill-trees'));
+            wp_die(__('Nepovoleno', 'rpg-skill-trees'));
         }
         check_admin_referer('rst_save_settings');
         $settings = $_POST['settings'] ?? [];
