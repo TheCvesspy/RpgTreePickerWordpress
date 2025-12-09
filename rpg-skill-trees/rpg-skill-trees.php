@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RPG Skill Trees
  * Description: Create RPG-style skill trees with tier rules, prerequisites, and build saving.
- * Version: 1.4.10
+ * Version: 1.4.11
  * Author: Quill
  * Text Domain: rpg-skill-trees
  */

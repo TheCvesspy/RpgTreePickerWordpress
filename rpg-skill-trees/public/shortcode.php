@@ -30,6 +30,7 @@ $settings = (new RPG_Skill_Trees())->get_settings();
             </div>
         </div>
     </div>
+    <hr class="rpg-header-separator" />
     <div class="rpg-builder-body" id="rpg-builder-body"></div>
     <svg class="rpg-prereq-lines" id="rpg-prereq-lines"></svg>
 </div>
