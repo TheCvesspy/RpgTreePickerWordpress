@@ -287,6 +287,7 @@
         const rowHeight = getSkillRowHeight(treeId);
         let nextRow = 0;
         const rowOwners = {};
+        const preferredRows = {};
         const tierSkills = tier=>skills.filter(s=>parseInt(s.tier,10)===tier);
         const getName = id => {
             const skill = skills.find(s=>s.id===id);
@@ -310,17 +311,27 @@
             nextRow = Math.max(nextRow, row + 1);
         };
 
-        tierSkills(1)
-            .sort(sortSkills)
-            .forEach(skill=>assignRow(skill, nextRow, skill.id));
+        const setPreferredRowsForTier = orderedTierSkills => {
+            const tierStart = nextRow;
+            orderedTierSkills.forEach((skill, index)=>{
+                preferredRows[skill.id] = tierStart + index;
+            });
+        };
+
+        const tierOneSkills = tierSkills(1).sort(sortSkills);
+        setPreferredRowsForTier(tierOneSkills);
+        tierOneSkills.forEach(skill=>assignRow(skill, preferredRows[skill.id], skill.id));
 
         for(let tier=2;tier<=4;tier++){
+            const orderedTierSkills = tierSkills(tier).sort(sortSkills);
             const singlePrereqs = [];
             const multiPrereqs = [];
             const noPrereqs = [];
             const nextRowForPrereq = {};
 
-            tierSkills(tier).forEach(skill=>{
+            setPreferredRowsForTier(orderedTierSkills);
+
+            orderedTierSkills.forEach(skill=>{
                 if(skill.prereqs && skill.prereqs.length){
                     if(skill.prereqs.length > 1){
                         multiPrereqs.push(skill);
@@ -332,35 +343,37 @@
                 }
             });
 
-            singlePrereqs
-                .sort(sortSkills)
-                .forEach(skill=>{
-                    const prereqId = skill.prereqs[0];
-                    const prereqSkill = skills.find(s=>s.id===parseInt(prereqId,10));
-                    if(prereqSkill && rows[prereqSkill.id] === undefined){
-                        assignRow(prereqSkill, nextRow, prereqSkill.id);
-                    }
-                    const baseRow = rows[prereqId] !== undefined ? rows[prereqId] : nextRow;
-                    const owner = rowOwners[baseRow] !== undefined ? rowOwners[baseRow] : prereqId;
-                    const startRow = nextRowForPrereq[owner] !== undefined ? nextRowForPrereq[owner] : baseRow + 1;
-                    assignRow(skill, startRow, owner);
-                    nextRowForPrereq[owner] = rows[skill.id] + 1;
-                });
+            singlePrereqs.forEach(skill=>{
+                const prereqId = skill.prereqs[0];
+                const prereqSkill = skills.find(s=>s.id===parseInt(prereqId,10));
+                if(prereqSkill && rows[prereqSkill.id] === undefined){
+                    const preferredPrereqRow = preferredRows[prereqSkill.id] !== undefined ? preferredRows[prereqSkill.id] : nextRow;
+                    assignRow(prereqSkill, preferredPrereqRow, prereqSkill.id);
+                }
+                const baseRow = rows[prereqId] !== undefined ? rows[prereqId] : preferredRows[skill.id];
+                const owner = rowOwners[baseRow] !== undefined ? rowOwners[baseRow] : prereqId;
+                const preferredStart = preferredRows[skill.id] !== undefined ? preferredRows[skill.id] : baseRow + 1;
+                const stackStart = nextRowForPrereq[owner] !== undefined ? nextRowForPrereq[owner] : baseRow + 1;
+                const startRow = Math.max(preferredStart, stackStart);
+                assignRow(skill, startRow, owner);
+                nextRowForPrereq[owner] = rows[skill.id] + 1;
+            });
 
-            multiPrereqs
-                .sort(sortSkills)
-                .forEach(skill=>{
-                    assignRow(skill, nextRow, skill.id);
-                });
+            multiPrereqs.forEach(skill=>{
+                const startRow = preferredRows[skill.id] !== undefined ? preferredRows[skill.id] : nextRow;
+                assignRow(skill, startRow, skill.id);
+            });
 
-            noPrereqs
-                .sort(sortSkills)
-                .forEach(skill=>assignRow(skill, nextRow, skill.id));
+            noPrereqs.forEach(skill=>{
+                const startRow = preferredRows[skill.id] !== undefined ? preferredRows[skill.id] : nextRow;
+                assignRow(skill, startRow, skill.id);
+            });
         }
 
         skills.forEach(skill=>{
             if(rows[skill.id] === undefined){
-                assignRow(skill, nextRow, skill.id);
+                const startRow = preferredRows[skill.id] !== undefined ? preferredRows[skill.id] : nextRow;
+                assignRow(skill, startRow, skill.id);
             }
         });
 
