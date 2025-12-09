@@ -193,8 +193,8 @@
                 tierColumn.append('<div class="rpg-tier-title">'+dataLabel('Tier')+' '+tier+'</div>');
                 const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"></div>');
                 const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
-                const paddingOffset = 10;
-                const paddingBottom = 10;
+                const paddingOffset = 6;
+                const paddingBottom = 6;
                 tierCol.css('min-height', (layout.totalRows * layout.rowHeight + paddingOffset + paddingBottom)+'px');
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
@@ -236,7 +236,7 @@
             return rowHeightCache[treeId];
         }
 
-        const gap = 10; // ensures at least 8px spacing between card edges while staying compact
+        const gap = 5; // keeps visible separation while making rows more compact
         const skills = data.skills.filter(s=>s.tree===treeId);
         const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:235px; padding:12px;"></div>');
         $('body').append(probeTier);

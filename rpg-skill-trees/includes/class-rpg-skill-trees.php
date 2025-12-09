@@ -12,6 +12,8 @@ class RPG_Skill_Trees {
         add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
         add_filter('manage_rpg_skill_posts_columns', [$this, 'add_skill_columns']);
         add_action('manage_rpg_skill_posts_custom_column', [$this, 'render_skill_columns'], 10, 2);
+        add_filter('manage_rpg_skill_tree_posts_columns', [$this, 'add_tree_columns']);
+        add_action('manage_rpg_skill_tree_posts_custom_column', [$this, 'render_tree_columns'], 10, 2);
         add_action('wp_enqueue_scripts', [$this, 'public_assets']);
         add_shortcode('rpg_skill_trees', [$this, 'render_shortcode']);
         add_action('wp_ajax_rpg_skill_trees_save_build', [$this, 'ajax_save_build']);
@@ -60,9 +62,15 @@ class RPG_Skill_Trees {
         wp_nonce_field('rpg_skill_tree_meta', 'rpg_skill_tree_meta_nonce');
         $icon = get_post_meta($post->ID, '_rpg_icon', true);
         $tier_requirements = (array) get_post_meta($post->ID, '_rpg_tier_requirements', true);
+        $active_meta = get_post_meta($post->ID, 'rst_active', true);
+        $active = ($active_meta === '' ? 1 : intval($active_meta));
         echo '<p><label>' . esc_html__('Icon', 'rpg-skill-trees') . '</label><br />';
         echo '<input type="text" class="widefat rpg-icon-input" id="rpg_tree_icon" name="rpg_icon" value="' . esc_attr($icon) . '" />';
         echo '<button type="button" class="button rpg-upload-icon" data-target="rpg_tree_icon">' . esc_html__('Upload Icon', 'rpg-skill-trees') . '</button></p>';
+        echo '<p class="rst-toggle-switch">';
+        echo '<input type="checkbox" id="rst_tree_active" name="rst_active" value="1" ' . checked($active, 1, false) . ' />';
+        echo '<label for="rst_tree_active">' . esc_html__('Active (show on front end)', 'rpg-skill-trees') . '</label>';
+        echo '</p>';
         echo '<h4>' . esc_html__('Tier Investment Requirements', 'rpg-skill-trees') . '</h4>';
         for ($i = 1; $i <= 3; $i++) {
             $val = isset($tier_requirements[$i]) ? intval($tier_requirements[$i]) : 0;
@@ -148,6 +156,7 @@ class RPG_Skill_Trees {
             update_post_meta($post_id, '_rpg_icon', $icon);
             $reqs = isset($_POST['rpg_tier_requirements']) ? array_map('intval', (array) $_POST['rpg_tier_requirements']) : [];
             update_post_meta($post_id, '_rpg_tier_requirements', $reqs);
+            update_post_meta($post_id, 'rst_active', isset($_POST['rst_active']) ? 1 : 0);
         }
 
         if (isset($_POST['rpg_skill_meta_nonce']) && wp_verify_nonce($_POST['rpg_skill_meta_nonce'], 'rpg_skill_meta')) {
@@ -577,5 +586,29 @@ class RPG_Skill_Trees {
             return;
         }
         echo esc_html(implode(', ', $names));
+    }
+
+    public function add_tree_columns($columns) {
+        $new = [];
+        foreach ($columns as $key => $label) {
+            $new[$key] = $label;
+            if ('title' === $key) {
+                $new['rst_active'] = __('Active', 'rpg-skill-trees');
+            }
+        }
+        if (!isset($new['rst_active'])) {
+            $new['rst_active'] = __('Active', 'rpg-skill-trees');
+        }
+        return $new;
+    }
+
+    public function render_tree_columns($column, $post_id) {
+        if ('rst_active' !== $column) {
+            return;
+        }
+        $active = intval(get_post_meta($post_id, 'rst_active', true));
+        echo $active === 0
+            ? '<span class="rst-status rst-status--inactive">' . esc_html__('Inactive', 'rpg-skill-trees') . '</span>'
+            : '<span class="rst-status rst-status--active">' . esc_html__('Active', 'rpg-skill-trees') . '</span>';
     }
 }
