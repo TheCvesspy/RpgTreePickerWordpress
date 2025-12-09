@@ -64,6 +64,8 @@ class RPG_Skill_Trees {
         $tier_requirements = (array) get_post_meta($post->ID, '_rpg_tier_requirements', true);
         $active_meta = get_post_meta($post->ID, 'rst_active', true);
         $active = ($active_meta === '' ? 1 : intval($active_meta));
+        $custom_rule_enabled = intval(get_post_meta($post->ID, 'rst_custom_requirement_enabled', true));
+        $custom_rule = get_post_meta($post->ID, 'rst_custom_requirement_rule', true);
         echo '<p><label>' . esc_html__('Icon', 'rpg-skill-trees') . '</label><br />';
         echo '<input type="text" class="widefat rpg-icon-input" id="rpg_tree_icon" name="rpg_icon" value="' . esc_attr($icon) . '" />';
         echo '<button type="button" class="button rpg-upload-icon" data-target="rpg_tree_icon">' . esc_html__('Upload Icon', 'rpg-skill-trees') . '</button></p>';
@@ -71,6 +73,13 @@ class RPG_Skill_Trees {
         echo '<input type="checkbox" id="rst_tree_active" name="rst_active" value="1" ' . checked($active, 1, false) . ' />';
         echo '<label for="rst_tree_active">' . esc_html__('Active (show on front end)', 'rpg-skill-trees') . '</label>';
         echo '</p>';
+        echo '<p class="rst-toggle-switch">';
+        echo '<input type="checkbox" id="rst_custom_requirement_enabled" name="rst_custom_requirement_enabled" value="1" ' . checked($custom_rule_enabled, 1, false) . ' />';
+        echo '<label for="rst_custom_requirement_enabled">' . esc_html__('Override basic requirements with a custom rule for this tree', 'rpg-skill-trees') . '</label>';
+        echo '</p>';
+        echo '<p><label for="rst_custom_requirement_rule">' . esc_html__('Custom requirement rule (visible to users)', 'rpg-skill-trees') . '</label><br />';
+        echo '<textarea class="widefat" rows="3" id="rst_custom_requirement_rule" name="rst_custom_requirement_rule" placeholder="' . esc_attr__('e.g., Requires completion of the Initiate quest line.', 'rpg-skill-trees') . '">' . esc_textarea($custom_rule) . '</textarea>';
+        echo '<span class="description">' . esc_html__('When enabled, this rule replaces the default prerequisite and tier requirements for skills in this tree.', 'rpg-skill-trees') . '</span></p>';
         echo '<h4>' . esc_html__('Tier Investment Requirements', 'rpg-skill-trees') . '</h4>';
         for ($i = 1; $i <= 3; $i++) {
             $val = isset($tier_requirements[$i]) ? intval($tier_requirements[$i]) : 0;
@@ -157,6 +166,10 @@ class RPG_Skill_Trees {
             $reqs = isset($_POST['rpg_tier_requirements']) ? array_map('intval', (array) $_POST['rpg_tier_requirements']) : [];
             update_post_meta($post_id, '_rpg_tier_requirements', $reqs);
             update_post_meta($post_id, 'rst_active', isset($_POST['rst_active']) ? 1 : 0);
+            $custom_rule_enabled = isset($_POST['rst_custom_requirement_enabled']) ? 1 : 0;
+            $custom_rule = wp_kses_post($_POST['rst_custom_requirement_rule'] ?? '');
+            update_post_meta($post_id, 'rst_custom_requirement_enabled', $custom_rule_enabled);
+            update_post_meta($post_id, 'rst_custom_requirement_rule', $custom_rule);
         }
 
         if (isset($_POST['rpg_skill_meta_nonce']) && wp_verify_nonce($_POST['rpg_skill_meta_nonce'], 'rpg_skill_meta')) {
@@ -335,17 +348,19 @@ class RPG_Skill_Trees {
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
         $tree_data = [];
         foreach ($trees as $tree) {
-            $tree_data[$tree->ID] = [
-                'id' => $tree->ID,
-                'name' => $tree->post_title,
-                'description' => wp_kses_post($tree->post_content),
-                'icon' => esc_url(get_post_meta($tree->ID, '_rpg_icon', true)),
-                'tier_requirements' => (array) get_post_meta($tree->ID, '_rpg_tier_requirements', true),
-            ];
-        }
-        $skill_data = [];
-        foreach ($skills as $skill) {
-            $trees_for_skill = get_post_meta($skill->ID, '_rpg_trees', true);
+                $tree_data[$tree->ID] = [
+                    'id' => $tree->ID,
+                    'name' => $tree->post_title,
+                    'description' => wp_kses_post($tree->post_content),
+                    'icon' => esc_url(get_post_meta($tree->ID, '_rpg_icon', true)),
+                    'tier_requirements' => (array) get_post_meta($tree->ID, '_rpg_tier_requirements', true),
+                    'custom_requirement_enabled' => intval(get_post_meta($tree->ID, 'rst_custom_requirement_enabled', true)) === 1,
+                    'custom_requirement_rule' => wp_kses_post(get_post_meta($tree->ID, 'rst_custom_requirement_rule', true)),
+                ];
+            }
+            $skill_data = [];
+            foreach ($skills as $skill) {
+                $trees_for_skill = get_post_meta($skill->ID, '_rpg_trees', true);
             if (empty($trees_for_skill)) {
                 $legacy_tree = get_post_meta($skill->ID, '_rpg_tree', true);
                 $trees_for_skill = $legacy_tree ? [$legacy_tree] : [];
@@ -451,6 +466,7 @@ class RPG_Skill_Trees {
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
         $skill_map = [];
         $skill_tree_map = [];
+        $tree_overrides = [];
         foreach ($skills as $skill) {
             $trees_for_skill = get_post_meta($skill->ID, '_rpg_trees', true);
             if (empty($trees_for_skill)) {
@@ -461,6 +477,11 @@ class RPG_Skill_Trees {
             foreach ($skill_tree_map[$skill->ID] as $tree_id) {
                 if ($tree_id <= 0) {
                     continue;
+                }
+                if (!isset($tree_overrides[$tree_id])) {
+                    $tree_overrides[$tree_id] = [
+                        'enabled' => intval(get_post_meta($tree_id, 'rst_custom_requirement_enabled', true)) === 1,
+                    ];
                 }
                 $instance_key = $skill->ID . ':' . $tree_id;
                 $skill_map[$instance_key] = [
@@ -519,9 +540,11 @@ class RPG_Skill_Trees {
                 return ['valid' => false, 'message' => __('Strom schopností není vybrán.', 'rpg-skill-trees')];
             }
             if (!$this->prerequisites_met_server($skill['prereqs'], $selected_skills, $skill['tree'])) {
-                return ['valid' => false, 'message' => __('Chybí požadované schopnosti.', 'rpg-skill-trees')];
+                if (empty($tree_overrides[$skill['tree']]['enabled'])) {
+                    return ['valid' => false, 'message' => __('Chybí požadované schopnosti.', 'rpg-skill-trees')];
+                }
             }
-            if (!$this->tier_requirement_met_server($skill, $tree_spent)) {
+            if (empty($tree_overrides[$skill['tree']]['enabled']) && !$this->tier_requirement_met_server($skill, $tree_spent)) {
                 return ['valid' => false, 'message' => __('Nesplněný požadavek úrovně.', 'rpg-skill-trees')];
             }
             if (!$this->has_points_for_skill_server($skill, $totals, $spent, $settings)) {

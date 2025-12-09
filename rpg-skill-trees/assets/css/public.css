@@ -32,6 +32,7 @@
 .rpg-convert-btn:hover { background:#1d4ed8; color:#f8fafc; border-color:#1d4ed8; }
 .rpg-builder-body { position: relative; }
 .rpg-tree { margin-bottom:14px; }
+.rpg-tree-custom-rule { margin:6px 0 10px; padding:8px 10px; background:#0f172a; border:1px solid #1f2937; border-radius:6px; color:#cbd5f5; font-size:12px; }
 .rpg-tiers { display:flex; gap:10px; align-items:flex-start; }
 .rpg-tier { background:#111827; padding:10px; min-width:278px; border-radius:8px; position:relative; border:1px solid #1f2937; box-shadow:inset 0 1px 0 rgba(255,255,255,0.03); }
 .rpg-tier-column { display:flex; flex-direction:column; gap:6px; min-width:290px; }

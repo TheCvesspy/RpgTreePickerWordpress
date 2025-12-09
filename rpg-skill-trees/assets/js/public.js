@@ -202,6 +202,10 @@
             if(!tree) return;
             const treeWrap = $('<div class="rpg-tree" data-tree="'+treeId+'"></div>');
             treeWrap.append('<h3>'+tree.name+'</h3>');
+            if(customRequirementActive(treeId)){
+                const rule = $('<div class="rpg-tree-custom-rule"></div>').text(customRequirementText(treeId));
+                treeWrap.append(rule);
+            }
             const tiersWrap = $('<div class="rpg-tiers"></div>');
             const layout = calculateLayoutForTree(treeId);
             const highestTier = getHighestTierForTree(treeId);
@@ -372,6 +376,16 @@
         return map[base] || base;
     }
 
+    function customRequirementActive(treeId){
+        const tree = data.trees.find(t=>t.id===treeId);
+        return !!(tree && tree.custom_requirement_enabled && tree.custom_requirement_rule);
+    }
+
+    function customRequirementText(treeId){
+        const tree = data.trees.find(t=>t.id===treeId);
+        return tree && tree.custom_requirement_rule ? tree.custom_requirement_rule : '';
+    }
+
     function toggleSkill(skill){
         const id = skill.instance.toString();
         const isSelected = !!selectedSkills[id];
@@ -403,6 +417,7 @@
     function maintainsTierRequirementsAfterRemoval(skill){
         const tree = data.trees.find(t=>t.id===skill.tree);
         if(!tree) return true;
+        if(customRequirementActive(tree.id)) return true;
         const reqs = tree.tier_requirements || {};
         const excluded = skill.instance.toString();
         const spent = {1:0,2:0,3:0,4:0};
@@ -479,6 +494,7 @@
     function tierRequirementMet(skill){
         const tree = data.trees.find(t=>t.id===skill.tree);
         if(!tree) return true;
+        if(customRequirementActive(tree.id)) return true;
         const reqs = tree.tier_requirements || {};
         if(skill.tier<=1) return true;
         const requiredPoints = parseFloat(reqs[skill.tier-1] || 0);
@@ -495,6 +511,7 @@
 
     function prerequisitesMet(skill){
         if(!skill.prereqs || !skill.prereqs.length) return true;
+        if(customRequirementActive(skill.tree)) return true;
         return skill.prereqs.every(id=>{
             const instanceId = getInstanceIdForSkill(id, skill.tree);
             return instanceId ? selectedSkills[instanceId] : false;
