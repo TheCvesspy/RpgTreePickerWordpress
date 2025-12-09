@@ -308,7 +308,7 @@ class RPG_Skill_Trees {
     }
 
     public function register_admin_menu() {
-        add_menu_page(__('About', 'rpg-skill-trees'), __('About', 'rpg-skill-trees'), 'manage_options', 'rpg-skill-trees', [$this, 'render_about_page'], 'dashicons-networking');
+        add_menu_page(__('About', 'rpg-skill-trees'), __('Skill Trees', 'rpg-skill-trees'), 'manage_options', 'rpg-skill-trees', [$this, 'render_about_page'], 'dashicons-networking');
         add_submenu_page('rpg-skill-trees', __('Skill Trees', 'rpg-skill-trees'), __('Skill Trees', 'rpg-skill-trees'), 'manage_options', 'edit.php?post_type=rpg_skill_tree');
         add_submenu_page('rpg-skill-trees', __('Skills', 'rpg-skill-trees'), __('Skills', 'rpg-skill-trees'), 'manage_options', 'edit.php?post_type=rpg_skill');
         add_submenu_page('rpg-skill-trees', __('Global Settings', 'rpg-skill-trees'), __('Global Settings', 'rpg-skill-trees'), 'manage_options', 'rpg-skill-trees-settings', [$this, 'render_settings_page']);
