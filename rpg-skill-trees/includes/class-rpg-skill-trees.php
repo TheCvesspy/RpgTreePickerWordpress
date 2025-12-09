@@ -222,6 +222,12 @@ class RPG_Skill_Trees {
                 'requirements' => isset($_POST['font_sizes']['requirements']) ? floatval($_POST['font_sizes']['requirements']) : 12,
             ];
             $settings['colors'] = [
+                'layout_bg' => sanitize_hex_color($_POST['colors']['layout_bg'] ?? '') ?: '#0b1021',
+                'layout_border' => sanitize_hex_color($_POST['colors']['layout_border'] ?? '') ?: '#1f2937',
+                'layout_text' => sanitize_hex_color($_POST['colors']['layout_text'] ?? '') ?: '#e5e7eb',
+                'tier_bg' => sanitize_hex_color($_POST['colors']['tier_bg'] ?? '') ?: '#111827',
+                'tier_border' => sanitize_hex_color($_POST['colors']['tier_border'] ?? '') ?: '#1f2937',
+                'tier_title' => sanitize_hex_color($_POST['colors']['tier_title'] ?? '') ?: '#93c5fd',
                 'button_bg' => sanitize_hex_color($_POST['colors']['button_bg'] ?? '') ?: '#1f2937',
                 'button_text' => sanitize_hex_color($_POST['colors']['button_text'] ?? '') ?: '#f9fafb',
                 'button_border' => sanitize_hex_color($_POST['colors']['button_border'] ?? '') ?: '#374151',
@@ -229,11 +235,17 @@ class RPG_Skill_Trees {
                 'skill_bg' => sanitize_hex_color($_POST['colors']['skill_bg'] ?? '') ?: '#1f2937',
                 'skill_border' => sanitize_hex_color($_POST['colors']['skill_border'] ?? '') ?: '#374151',
                 'skill_text' => sanitize_hex_color($_POST['colors']['skill_text'] ?? '') ?: '#f9fafb',
+                'skill_tooltip_bg' => sanitize_hex_color($_POST['colors']['skill_tooltip_bg'] ?? '') ?: '#111827',
                 'skill_tooltip' => sanitize_hex_color($_POST['colors']['skill_tooltip'] ?? '') ?: '#cbd5e1',
                 'skill_prereq' => sanitize_hex_color($_POST['colors']['skill_prereq'] ?? '') ?: '#fbbf24',
                 'skill_selected_bg' => sanitize_hex_color($_POST['colors']['skill_selected_bg'] ?? '') ?: '#0f172a',
                 'skill_selected_border' => sanitize_hex_color($_POST['colors']['skill_selected_border'] ?? '') ?: '#60a5fa',
                 'skill_hover_border' => sanitize_hex_color($_POST['colors']['skill_hover_border'] ?? '') ?: '#60a5fa',
+                'points_bg' => sanitize_hex_color($_POST['colors']['points_bg'] ?? '') ?: '#111827',
+                'points_border' => sanitize_hex_color($_POST['colors']['points_border'] ?? '') ?: '#1f2937',
+                'points_text' => sanitize_hex_color($_POST['colors']['points_text'] ?? '') ?: '#e5e7eb',
+                'points_label' => sanitize_hex_color($_POST['colors']['points_label'] ?? '') ?: '#cbd5f5',
+                'messages' => sanitize_hex_color($_POST['colors']['messages'] ?? '') ?: '#fca5a5',
             ];
             update_option(self::OPTION_KEY, $settings);
             echo '<div class="updated"><p>' . esc_html__('Settings saved.', 'rpg-skill-trees') . '</p></div>';
@@ -269,7 +281,10 @@ class RPG_Skill_Trees {
             $tooltip_size = isset($settings['font_sizes']['tooltip']) ? max(1, floatval($settings['font_sizes']['tooltip'])) : 12;
             $requirements_size = isset($settings['font_sizes']['requirements']) ? max(1, floatval($settings['font_sizes']['requirements'])) : 12;
             $colors = isset($settings['colors']) ? $settings['colors'] : [];
-            $inline_styles = '.rpg-skill-name{font-size:' . $title_size . 'px;}'
+            $inline_styles = '.rpg-skill-trees-builder{background:' . esc_html($colors['layout_bg']) . ';border-color:' . esc_html($colors['layout_border']) . ';color:' . esc_html($colors['layout_text']) . ';}'
+                . '.rpg-tree>h3,.rpg-tier-title{color:' . esc_html($colors['tier_title']) . ';}'
+                . '.rpg-tier{background:' . esc_html($colors['tier_bg']) . ';border-color:' . esc_html($colors['tier_border']) . ';}'
+                . '.rpg-skill-name{font-size:' . $title_size . 'px;}'
                 . '.rpg-skill-tooltip,.rpg-tooltip-effect{font-size:' . $tooltip_size . 'px;}'
                 . '.rpg-skill-prereqs{font-size:' . $requirements_size . 'px;}'
                 . '.rpg-skill{background:' . esc_html($colors['skill_bg']) . ';border-color:' . esc_html($colors['skill_border']) . ';color:' . esc_html($colors['skill_text']) . ';}'
@@ -277,10 +292,15 @@ class RPG_Skill_Trees {
                 . '.rpg-skill.rpg-selected{background:' . esc_html($colors['skill_selected_bg']) . ';border-color:' . esc_html($colors['skill_selected_border']) . ';box-shadow:0 0 0 2px ' . esc_html($colors['skill_selected_border']) . ';}'
                 . '.rpg-skill-name{color:' . esc_html($colors['skill_text']) . ';}'
                 . '.rpg-skill-tooltip,.rpg-tooltip-effect{color:' . esc_html($colors['skill_tooltip']) . ';}'
+                . '.rpg-hover-tooltip{background:' . esc_html($colors['skill_tooltip_bg']) . ';border-color:' . esc_html($colors['skill_border']) . ';}'
                 . '.rpg-skill-prereqs{color:' . esc_html($colors['skill_prereq']) . ';}'
                 . '.rpg-skill-trees-builder .button,.rpg-skill-trees-builder .button-primary{background:' . esc_html($colors['button_bg']) . ';color:' . esc_html($colors['button_text']) . ';border-color:' . esc_html($colors['button_border']) . ';}'
                 . '.rpg-skill-trees-builder .button:hover,.rpg-skill-trees-builder .button-primary:hover{background:' . esc_html($colors['button_hover']) . ';color:' . esc_html($colors['button_text']) . ';border-color:' . esc_html($colors['button_hover']) . ';}'
-                . '.rpg-skill-trees-builder .button-primary{background:' . esc_html($colors['button_hover']) . ';border-color:' . esc_html($colors['button_hover']) . ';}';
+                . '.rpg-skill-trees-builder .button-primary{background:' . esc_html($colors['button_hover']) . ';border-color:' . esc_html($colors['button_hover']) . ';}'
+                . '.rpg-point-row{background:' . esc_html($colors['points_bg']) . ';border-color:' . esc_html($colors['points_border']) . ';color:' . esc_html($colors['points_text']) . ';}'
+                . '.rpg-point-label{color:' . esc_html($colors['points_label']) . ';}'
+                . '.rpg-point-values{color:' . esc_html($colors['points_text']) . ';}'
+                . '.rpg-builder-messages{color:' . esc_html($colors['messages']) . ';}';
             wp_add_inline_style('rpg-skill-trees-public', $inline_styles);
             wp_localize_script('rpg-skill-trees-public', 'RPGSkillTreesData', $this->get_public_data());
         }
@@ -568,6 +588,12 @@ class RPG_Skill_Trees {
                 'requirements' => 12,
             ],
             'colors' => [
+                'layout_bg' => '#0b1021',
+                'layout_border' => '#1f2937',
+                'layout_text' => '#e5e7eb',
+                'tier_bg' => '#111827',
+                'tier_border' => '#1f2937',
+                'tier_title' => '#93c5fd',
                 'button_bg' => '#1f2937',
                 'button_text' => '#f9fafb',
                 'button_border' => '#374151',
@@ -575,11 +601,17 @@ class RPG_Skill_Trees {
                 'skill_bg' => '#1f2937',
                 'skill_border' => '#374151',
                 'skill_text' => '#f9fafb',
+                'skill_tooltip_bg' => '#111827',
                 'skill_tooltip' => '#cbd5e1',
                 'skill_prereq' => '#fbbf24',
                 'skill_selected_bg' => '#0f172a',
                 'skill_selected_border' => '#60a5fa',
                 'skill_hover_border' => '#60a5fa',
+                'points_bg' => '#111827',
+                'points_border' => '#1f2937',
+                'points_text' => '#e5e7eb',
+                'points_label' => '#cbd5f5',
+                'messages' => '#fca5a5',
             ],
         ];
         $settings = get_option(self::OPTION_KEY, []);

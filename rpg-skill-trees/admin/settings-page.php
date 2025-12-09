@@ -83,20 +83,35 @@ $settings = isset($settings) ? $settings : [];
         <table class="form-table">
             <tbody>
                 <tr>
-                    <th scope="row"><?php esc_html_e('Button background', 'rpg-skill-trees'); ?></th>
-                    <td><input type="color" name="colors[button_bg]" value="<?php echo esc_attr($settings['colors']['button_bg'] ?? '#1f2937'); ?>" /></td>
+                    <th colspan="2"><h3><?php esc_html_e('Layout & Panels', 'rpg-skill-trees'); ?></h3></th>
                 </tr>
                 <tr>
-                    <th scope="row"><?php esc_html_e('Button hover/primary background', 'rpg-skill-trees'); ?></th>
-                    <td><input type="color" name="colors[button_hover]" value="<?php echo esc_attr($settings['colors']['button_hover'] ?? '#2563eb'); ?>" /></td>
+                    <th scope="row"><?php esc_html_e('Plugin background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[layout_bg]" value="<?php echo esc_attr($settings['colors']['layout_bg'] ?? '#0b1021'); ?>" /></td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php esc_html_e('Button text', 'rpg-skill-trees'); ?></th>
-                    <td><input type="color" name="colors[button_text]" value="<?php echo esc_attr($settings['colors']['button_text'] ?? '#f9fafb'); ?>" /></td>
+                    <th scope="row"><?php esc_html_e('Plugin border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[layout_border]" value="<?php echo esc_attr($settings['colors']['layout_border'] ?? '#1f2937'); ?>" /></td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php esc_html_e('Button border', 'rpg-skill-trees'); ?></th>
-                    <td><input type="color" name="colors[button_border]" value="<?php echo esc_attr($settings['colors']['button_border'] ?? '#374151'); ?>" /></td>
+                    <th scope="row"><?php esc_html_e('Base text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[layout_text]" value="<?php echo esc_attr($settings['colors']['layout_text'] ?? '#e5e7eb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Tier background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[tier_bg]" value="<?php echo esc_attr($settings['colors']['tier_bg'] ?? '#111827'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Tier border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[tier_border]" value="<?php echo esc_attr($settings['colors']['tier_border'] ?? '#1f2937'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Tier heading text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[tier_title]" value="<?php echo esc_attr($settings['colors']['tier_title'] ?? '#93c5fd'); ?>" /></td>
+                </tr>
+
+                <tr>
+                    <th colspan="2"><h3><?php esc_html_e('Skill Card', 'rpg-skill-trees'); ?></h3></th>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Skill card background', 'rpg-skill-trees'); ?></th>
@@ -109,6 +124,10 @@ $settings = isset($settings) ? $settings : [];
                 <tr>
                     <th scope="row"><?php esc_html_e('Skill card text', 'rpg-skill-trees'); ?></th>
                     <td><input type="color" name="colors[skill_text]" value="<?php echo esc_attr($settings['colors']['skill_text'] ?? '#f9fafb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Tooltip background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_tooltip_bg]" value="<?php echo esc_attr($settings['colors']['skill_tooltip_bg'] ?? '#111827'); ?>" /></td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Tooltip text', 'rpg-skill-trees'); ?></th>
@@ -129,6 +148,50 @@ $settings = isset($settings) ? $settings : [];
                 <tr>
                     <th scope="row"><?php esc_html_e('Hover border', 'rpg-skill-trees'); ?></th>
                     <td><input type="color" name="colors[skill_hover_border]" value="<?php echo esc_attr($settings['colors']['skill_hover_border'] ?? '#60a5fa'); ?>" /></td>
+                </tr>
+
+                <tr>
+                    <th colspan="2"><h3><?php esc_html_e('Buttons', 'rpg-skill-trees'); ?></h3></th>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_bg]" value="<?php echo esc_attr($settings['colors']['button_bg'] ?? '#1f2937'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button hover/primary background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_hover]" value="<?php echo esc_attr($settings['colors']['button_hover'] ?? '#2563eb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_text]" value="<?php echo esc_attr($settings['colors']['button_text'] ?? '#f9fafb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Button border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[button_border]" value="<?php echo esc_attr($settings['colors']['button_border'] ?? '#374151'); ?>" /></td>
+                </tr>
+
+                <tr>
+                    <th colspan="2"><h3><?php esc_html_e('Point Calculator & Messages', 'rpg-skill-trees'); ?></h3></th>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Point calculator background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[points_bg]" value="<?php echo esc_attr($settings['colors']['points_bg'] ?? '#111827'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Point calculator border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[points_border]" value="<?php echo esc_attr($settings['colors']['points_border'] ?? '#1f2937'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Point calculator text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[points_text]" value="<?php echo esc_attr($settings['colors']['points_text'] ?? '#e5e7eb'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Point calculator labels', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[points_label]" value="<?php echo esc_attr($settings['colors']['points_label'] ?? '#cbd5f5'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Validation/message text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[messages]" value="<?php echo esc_attr($settings['colors']['messages'] ?? '#fca5a5'); ?>" /></td>
                 </tr>
             </tbody>
         </table>
