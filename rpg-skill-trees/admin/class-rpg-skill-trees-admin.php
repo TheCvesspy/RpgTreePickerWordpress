@@ -153,6 +153,7 @@ class Rpg_Skill_Trees_Admin {
         $description = $editing ? ($skill ? $skill->post_content : '') : '';
         $prereqs = $editing ? (array) maybe_unserialize($meta['rst_prereq_skills'][0] ?? []) : [];
         $min_points = $editing ? floatval($meta['rst_min_previous'][0] ?? 0) : 0;
+        $sort_order = $editing ? intval($meta['rst_sort_order'][0] ?? 0) : 0;
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Skills', 'rpg-skill-trees'); ?></h1>
@@ -192,6 +193,13 @@ class Rpg_Skill_Trees_Admin {
                             <tr>
                                 <th><label for="rst_skill_cost"><?php esc_html_e('Tier point cost', 'rpg-skill-trees'); ?></label></th>
                                 <td><input type="number" step="0.1" name="cost" id="rst_skill_cost" value="<?php echo esc_attr($cost); ?>" required /></td>
+                            </tr>
+                            <tr>
+                                <th><label for="rst_skill_sort_order"><?php esc_html_e('Sort Order', 'rpg-skill-trees'); ?></label></th>
+                                <td>
+                                    <input type="number" name="sort_order" id="rst_skill_sort_order" value="<?php echo esc_attr($sort_order); ?>" />
+                                    <p class="description"><?php esc_html_e('Controls the ordering of skill cards in the user view.', 'rpg-skill-trees'); ?></p>
+                                </td>
                             </tr>
                             <tr>
                                 <th><label for="rst_skill_icon"><?php esc_html_e('Icon URL', 'rpg-skill-trees'); ?></label></th>
@@ -364,6 +372,7 @@ class Rpg_Skill_Trees_Admin {
         update_post_meta($skill_id, 'rst_icon', esc_url_raw($_POST['icon'] ?? ''));
         update_post_meta($skill_id, 'rst_cost', floatval($_POST['cost'] ?? 0));
         update_post_meta($skill_id, 'rst_min_previous', floatval($_POST['min_prev'] ?? 0));
+        update_post_meta($skill_id, 'rst_sort_order', intval($_POST['sort_order'] ?? 0));
         $prereqs = isset($_POST['prereq_skills']) ? array_map('intval', (array) $_POST['prereq_skills']) : [];
         update_post_meta($skill_id, 'rst_prereq_skills', $prereqs);
         wp_safe_redirect(admin_url('admin.php?page=rpg-skill-trees-skills&updated=1'));
