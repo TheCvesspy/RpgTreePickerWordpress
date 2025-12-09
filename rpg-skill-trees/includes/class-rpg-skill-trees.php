@@ -76,6 +76,7 @@ class RPG_Skill_Trees {
         $tooltip = get_post_meta($post->ID, '_rpg_tooltip', true);
         $effect = get_post_meta($post->ID, '_rpg_effect', true);
         $prereqs = (array) get_post_meta($post->ID, '_rpg_prereqs', true);
+        $sort_order = get_post_meta($post->ID, 'rst_sort_order', true);
 
         $trees = get_posts(['post_type' => 'rpg_skill_tree', 'numberposts' => -1]);
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
@@ -95,6 +96,10 @@ class RPG_Skill_Trees {
 
         echo '<p><label>' . esc_html__('Tier Point Cost', 'rpg-skill-trees') . '</label><br />';
         echo '<input type="number" step="0.1" min="0" name="rpg_cost" value="' . esc_attr($cost ? $cost : 1) . '" /></p>';
+
+        echo '<p><label>' . esc_html__('Sort Order', 'rpg-skill-trees') . '</label><br />';
+        echo '<input type="number" name="rpg_sort_order" value="' . esc_attr($sort_order ? $sort_order : 0) . '" />';
+        echo '<span class="description">' . esc_html__('Controls ordering of skill cards in user view.', 'rpg-skill-trees') . '</span></p>';
 
         echo '<p><label>' . esc_html__('Icon', 'rpg-skill-trees') . '</label><br />';
         echo '<input type="text" class="widefat rpg-icon-input" id="rpg_skill_icon" name="rpg_icon" value="' . esc_attr($icon) . '" />';
@@ -145,6 +150,7 @@ class RPG_Skill_Trees {
             $tooltip = isset($_POST['rpg_tooltip']) ? wp_kses_post($_POST['rpg_tooltip']) : '';
             $effect = isset($_POST['rpg_effect']) ? wp_kses_post($_POST['rpg_effect']) : '';
             $prereqs = isset($_POST['rpg_prereqs']) ? array_map('intval', (array) $_POST['rpg_prereqs']) : [];
+            $sort_order = isset($_POST['rpg_sort_order']) ? intval($_POST['rpg_sort_order']) : 0;
 
             update_post_meta($post_id, '_rpg_trees', $trees);
             if (!empty($trees)) {
@@ -156,6 +162,7 @@ class RPG_Skill_Trees {
             update_post_meta($post_id, '_rpg_tooltip', $tooltip);
             update_post_meta($post_id, '_rpg_effect', $effect);
             update_post_meta($post_id, '_rpg_prereqs', $prereqs);
+            update_post_meta($post_id, 'rst_sort_order', $sort_order);
         }
     }
 
