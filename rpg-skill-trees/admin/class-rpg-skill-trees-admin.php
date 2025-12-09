@@ -70,6 +70,7 @@ class Rpg_Skill_Trees_Admin {
         $tier_rules = $editing ? get_post_meta($editing, 'rst_tier_requirements', true) : [];
         $icon = $editing ? get_post_meta($editing, 'rst_icon', true) : '';
         $color = $editing ? get_post_meta($editing, 'rst_color', true) : '';
+        $active = $editing ? intval(get_post_meta($editing, 'rst_active', true)) : 1;
         $trees = $this->get_trees();
         ?>
         <div class="wrap">
@@ -98,6 +99,17 @@ class Rpg_Skill_Trees_Admin {
                                 <th><label for="rst_tree_color"><?php esc_html_e('Color/Theme', 'rpg-skill-trees'); ?></label></th>
                                 <td><input type="text" name="color" id="rst_tree_color" class="regular-text" value="<?php echo esc_attr($color); ?>" placeholder="#4287f5" /></td>
                             </tr>
+                            <tr>
+                                <th><label for="rst_tree_active"><?php esc_html_e('Active', 'rpg-skill-trees'); ?></label></th>
+                                <td>
+                                    <label class="rst-toggle-switch" for="rst_tree_active">
+                                        <input type="checkbox" name="active" id="rst_tree_active" value="1" <?php checked($active, 1); ?> />
+                                        <span class="rst-toggle-slider" aria-hidden="true"></span>
+                                        <span><?php esc_html_e('Enable this tree on the user experience', 'rpg-skill-trees'); ?></span>
+                                    </label>
+                                    <p class="description"><?php esc_html_e('Inactive trees are hidden from the front-end builder.', 'rpg-skill-trees'); ?></p>
+                                </td>
+                            </tr>
                             <?php for ($i = 2; $i <= 4; $i++): ?>
                             <tr>
                                 <th><label for="rst_rule_<?php echo $i; ?>"><?php printf(esc_html__('Minimum Tier %1$d points before Tier %2$d unlocks', 'rpg-skill-trees'), $i-1, $i); ?></label></th>
@@ -111,13 +123,14 @@ class Rpg_Skill_Trees_Admin {
                 <div class="rst-column">
                     <h2><?php esc_html_e('Existing Trees', 'rpg-skill-trees'); ?></h2>
                     <table class="widefat">
-                        <thead><tr><th><?php esc_html_e('Name', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Skills', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Actions', 'rpg-skill-trees'); ?></th></tr></thead>
+                        <thead><tr><th><?php esc_html_e('Name', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Skills', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Active', 'rpg-skill-trees'); ?></th><th><?php esc_html_e('Actions', 'rpg-skill-trees'); ?></th></tr></thead>
                         <tbody>
                         <?php foreach ($trees as $t): ?>
                             <?php $skill_count = count(get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1, 'meta_key' => 'rst_tree_id', 'meta_value' => $t->ID])); ?>
                             <tr>
                                 <td><?php echo esc_html($t->post_title); ?></td>
                                 <td><?php echo intval($skill_count); ?></td>
+                                <td><?php echo intval(get_post_meta($t->ID, 'rst_active', true)) === 0 ? esc_html__('Inactive', 'rpg-skill-trees') : esc_html__('Active', 'rpg-skill-trees'); ?></td>
                                 <td>
                                     <a href="<?php echo esc_url(add_query_arg(['page' => 'rpg-skill-trees', 'tree_id' => $t->ID], admin_url('admin.php'))); ?>" class="button">Edit</a>
                                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline;">
@@ -330,6 +343,7 @@ class Rpg_Skill_Trees_Admin {
         update_post_meta($tree_id, 'rst_tier_requirements', $tier_rules);
         update_post_meta($tree_id, 'rst_icon', esc_url_raw($_POST['icon'] ?? ''));
         update_post_meta($tree_id, 'rst_color', sanitize_text_field($_POST['color'] ?? ''));
+        update_post_meta($tree_id, 'rst_active', isset($_POST['active']) ? 1 : 0);
         wp_safe_redirect(admin_url('admin.php?page=rpg-skill-trees&updated=1'));
         exit;
     }

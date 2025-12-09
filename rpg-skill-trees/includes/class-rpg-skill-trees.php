@@ -19,6 +19,14 @@ class RPG_Skill_Trees {
         add_action('wp_ajax_nopriv_rpg_skill_trees_load_build', [$this, 'ajax_load_build']);
     }
 
+    private function get_active_tree_meta_query() {
+        return [
+            'relation' => 'OR',
+            ['key' => 'rst_active', 'compare' => 'NOT EXISTS'],
+            ['key' => 'rst_active', 'value' => '0', 'compare' => '!='],
+        ];
+    }
+
     public function register_post_types() {
         register_post_type('rpg_skill_tree', [
             'labels' => [
@@ -246,7 +254,11 @@ class RPG_Skill_Trees {
     }
 
     private function get_public_data() {
-        $trees = get_posts(['post_type' => 'rpg_skill_tree', 'numberposts' => -1]);
+        $trees = get_posts([
+            'post_type' => 'rpg_skill_tree',
+            'numberposts' => -1,
+            'meta_query' => $this->get_active_tree_meta_query(),
+        ]);
         $skills = get_posts(['post_type' => 'rpg_skill', 'numberposts' => -1]);
         $tree_data = [];
         foreach ($trees as $tree) {

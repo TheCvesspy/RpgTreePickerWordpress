@@ -5,24 +5,69 @@
 .rpg-checkbox-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px 16px;
+    gap: 14px 20px;
     align-items: flex-start;
 }
 
 .rpg-checkbox-columns {
     display: flex;
-    gap: 18px;
+    gap: 22px;
     flex-wrap: wrap;
 }
 
 .rpg-checkbox-column {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
 }
 
 .rpg-checkbox-item {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    padding: 6px 0;
+}
+
+.rst-toggle-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rst-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.rst-toggle-slider {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    background: #c3c4c7;
+    border-radius: 12px;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.rst-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.rst-toggle-switch input:checked + .rst-toggle-slider {
+    background: #2271b1;
+}
+
+.rst-toggle-switch input:checked + .rst-toggle-slider::after {
+    transform: translateX(24px);
 }
