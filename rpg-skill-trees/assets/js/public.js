@@ -7,6 +7,7 @@
     let hoverTooltip;
     let svg;
     let html2CanvasPromise;
+    let messageHideTimer;
 
     function sortSkills(a,b){
         const orderA = parseInt(a && a.sort_order !== undefined ? a.sort_order : 0, 10) || 0;
@@ -578,8 +579,11 @@
     function showMessage(msg){
         if(!msg) return;
         const container = $('#rpg-builder-messages');
-        container.text(msg).show();
-        setTimeout(()=>container.fadeOut(), 2500);
+        container.stop(true, true).text(msg).show();
+        if(messageHideTimer){
+            clearTimeout(messageHideTimer);
+        }
+        messageHideTimer = setTimeout(()=>container.fadeOut(), 10000);
     }
 
     function getSkillName(id){
