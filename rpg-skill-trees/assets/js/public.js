@@ -212,13 +212,13 @@
                 const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
                 const paddingOffset = 0;
                 const paddingBottom = 0;
-                tierCol.css('min-height', (layout.totalRows * layout.rowHeight + paddingOffset + paddingBottom)+'px');
+                tierCol.css('min-height', (layout.totalHeight + paddingOffset + paddingBottom)+'px');
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
                 skills.forEach(skill=>{
                     const skillNode = buildSkillNode(skill, highestTier);
                     const row = layout.rows[skill.id] || 0;
-                    const top = paddingOffset + (row * layout.rowHeight);
+                    const top = paddingOffset + (layout.rowOffsets[row] !== undefined ? layout.rowOffsets[row] : (row * layout.rowHeight));
                     skillNode.css('top', top + 'px');
                     if(skillNode.data('tooltip')){
                         skillNode.on('mouseenter', event => showHoverTooltip(skillNode.data('tooltip'), event));
@@ -248,7 +248,7 @@
         Object.keys(rowHeightCache).forEach(key=> delete rowHeightCache[key]);
     }
 
-    function getSkillRowHeight(treeId){
+    function getSkillMeasurements(treeId){
         if(rowHeightCache[treeId]){
             return rowHeightCache[treeId];
         }
@@ -259,12 +259,15 @@
         $('body').append(probeTier);
 
         let maxHeight = 0;
+        const heights = {};
         const highestTier = getHighestTierForTree(treeId);
         skills.forEach(skill=>{
             const node = buildSkillNode(skill, highestTier);
             node.css({position:'relative', left:'auto', right:'auto', top:'auto'});
             probeTier.append(node);
-            maxHeight = Math.max(maxHeight, node.outerHeight(true));
+            const height = node.outerHeight(true);
+            heights[skill.id] = height;
+            maxHeight = Math.max(maxHeight, height);
             node.remove();
         });
 
@@ -277,14 +280,16 @@
         }
 
         probeTier.remove();
-        rowHeightCache[treeId] = Math.ceil(maxHeight + gap);
+        const rowHeight = Math.ceil(maxHeight + gap);
+        rowHeightCache[treeId] = { rowHeight, heights };
         return rowHeightCache[treeId];
     }
 
     function calculateLayoutForTree(treeId){
         const skills = data.skills.filter(s=>s.tree===treeId);
         const rows = {};
-        const rowHeight = getSkillRowHeight(treeId);
+        const measurements = getSkillMeasurements(treeId);
+        const rowHeight = measurements.rowHeight;
         let nextRow = 0;
         let rowOwners = {};
         const preferredRows = {};
@@ -432,7 +437,22 @@
             nextRow = 1;
         }
 
-        return { rows, totalRows: Math.max(1, nextRow), rowHeight };
+        const rowHeights = [];
+        skills.forEach(skill=>{
+            const row = rows[skill.id];
+            if(row === undefined) return;
+            const skillHeight = measurements.heights[skill.id] || rowHeight;
+            rowHeights[row] = Math.max(rowHeights[row] || 0, skillHeight);
+        });
+
+        const rowOffsets = [];
+        let totalHeight = 0;
+        for(let i=0;i<Math.max(1, rowHeights.length);i++){
+            rowOffsets[i] = totalHeight;
+            totalHeight += rowHeights[i] || rowHeight;
+        }
+
+        return { rows, totalRows: Math.max(1, rowHeights.length || nextRow), rowHeight, rowOffsets, totalHeight };
     }
 
     function dataLabel(base){
