@@ -71,3 +71,15 @@
 .rst-toggle-switch input:checked + .rst-toggle-slider::after {
     transform: translateX(24px);
 }
+
+.rst-status {
+    font-weight: 600;
+}
+
+.rst-status--active {
+    color: #1a7f37;
+}
+
+.rst-status--inactive {
+    color: #b32d2e;
+}
