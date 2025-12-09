@@ -61,6 +61,24 @@ $settings = isset($settings) ? $settings : [];
             </tbody>
         </table>
 
+        <h2><?php esc_html_e('Header Typography', 'rpg-skill-trees'); ?></h2>
+        <table class="form-table">
+            <tbody>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Header title font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="header_font_sizes[title]" value="<?php echo esc_attr($settings['header_font_sizes']['title'] ?? 18); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Header labels font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="header_font_sizes[label]" value="<?php echo esc_attr($settings['header_font_sizes']['label'] ?? 13); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Message font size (px)', 'rpg-skill-trees'); ?></th>
+                    <td><input type="number" min="8" step="0.5" name="header_font_sizes[message]" value="<?php echo esc_attr($settings['header_font_sizes']['message'] ?? 13); ?>" /></td>
+                </tr>
+            </tbody>
+        </table>
+
         <h2><?php esc_html_e('Skill Card Typography', 'rpg-skill-trees'); ?></h2>
         <table class="form-table">
             <tbody>
@@ -148,6 +166,22 @@ $settings = isset($settings) ? $settings : [];
                 <tr>
                     <th scope="row"><?php esc_html_e('Hover border', 'rpg-skill-trees'); ?></th>
                     <td><input type="color" name="colors[skill_hover_border]" value="<?php echo esc_attr($settings['colors']['skill_hover_border'] ?? '#60a5fa'); ?>" /></td>
+                </tr>
+
+                <tr>
+                    <th colspan="2"><h4><?php esc_html_e('Highest Tier Skill Card', 'rpg-skill-trees'); ?></h4></th>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Highest tier background', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_highest_bg]" value="<?php echo esc_attr($settings['colors']['skill_highest_bg'] ?? '#1e1b4b'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Highest tier border', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_highest_border]" value="<?php echo esc_attr($settings['colors']['skill_highest_border'] ?? '#8b5cf6'); ?>" /></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Highest tier text', 'rpg-skill-trees'); ?></th>
+                    <td><input type="color" name="colors[skill_highest_text]" value="<?php echo esc_attr($settings['colors']['skill_highest_text'] ?? '#ede9fe'); ?>" /></td>
                 </tr>
 
                 <tr>
