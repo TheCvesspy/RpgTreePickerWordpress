@@ -36,7 +36,7 @@
 .rpg-tier { background:#111827; padding:10px; min-width:278px; border-radius:8px; position:relative; border:1px solid #1f2937; box-shadow:inset 0 1px 0 rgba(255,255,255,0.03); }
 .rpg-tier-column { display:flex; flex-direction:column; gap:6px; min-width:290px; }
 .rpg-tier-title { text-align:center; color:#93c5fd; font-weight:600; margin:0; font-size:14px; }
-.rpg-skill { background:#1f2937; border:1px solid #374151; padding:8px 9px; cursor:pointer; border-radius:6px; position:absolute; left:0; right:0; transition:all 0.15s ease; color:#f9fafb; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
+.rpg-skill { background:#1f2937; border:1px solid #374151; padding:8px 9px 10px; cursor:pointer; border-radius:6px; position:absolute; left:0; right:0; transition:all 0.15s ease; color:#f9fafb; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
 .rpg-skill:hover { border-color:#60a5fa; box-shadow:0 6px 16px rgba(0,0,0,0.35); }
 .rpg-skill.rpg-selected { border-color:#60a5fa; box-shadow:0 0 0 2px rgba(96,165,250,0.35); background:#0f172a; }
 .rpg-skill.rpg-locked { opacity:0.45; cursor:not-allowed; }
