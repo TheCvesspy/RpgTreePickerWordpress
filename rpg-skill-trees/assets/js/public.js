@@ -210,8 +210,8 @@
                 tierColumn.append('<div class="rpg-tier-title">'+dataLabel('Tier')+' '+tier+'</div>');
                 const tierCol = $('<div class="rpg-tier" data-tier="'+tier+'"></div>');
                 const skills = (grouped[treeId] && grouped[treeId][tier] ? grouped[treeId][tier] : []);
-                const paddingOffset = 4;
-                const paddingBottom = 4;
+                const paddingOffset = 2;
+                const paddingBottom = 2;
                 tierCol.css('min-height', (layout.totalRows * layout.rowHeight + paddingOffset + paddingBottom)+'px');
                 tierCol.css('padding-top', paddingOffset+'px');
                 tierCol.css('padding-bottom', paddingBottom+'px');
@@ -253,7 +253,7 @@
             return rowHeightCache[treeId];
         }
 
-        const gap = 3; // keeps visible separation while making rows more compact
+        const gap = 1; // minimal separation to prevent overlap while keeping rows tight
         const skills = data.skills.filter(s=>s.tree===treeId);
         const probeTier = $('<div class="rpg-tier" style="position:absolute; visibility:hidden; width:270px; padding:12px;"></div>');
         $('body').append(probeTier);
@@ -420,6 +420,17 @@
                 assignRow(skill, startRow, skill.id);
             }
         });
+
+        // Remap rows to remove any gaps so the layout stays as compact as possible.
+        const usedRows = [...new Set(Object.values(rows).sort((a,b)=>a-b))];
+        if(usedRows.length){
+            const remap = {};
+            usedRows.forEach((row, index)=>{ remap[row] = index; });
+            Object.keys(rows).forEach(id => { rows[id] = remap[rows[id]]; });
+            nextRow = usedRows.length;
+        } else {
+            nextRow = 1;
+        }
 
         return { rows, totalRows: Math.max(1, nextRow), rowHeight };
     }
