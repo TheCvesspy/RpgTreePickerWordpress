@@ -85,3 +85,14 @@
 .rst-status--inactive {
     color: #b32d2e;
 }
+
+.rst-inline-list {
+    list-style: disc;
+    margin: 0;
+    padding-left: 18px;
+}
+
+.rst-inline-list li {
+    margin: 0;
+    padding: 0;
+}

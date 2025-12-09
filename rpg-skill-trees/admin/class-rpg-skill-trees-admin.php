@@ -134,18 +134,40 @@ class Rpg_Skill_Trees_Admin {
                                             <thead>
                                                 <tr>
                                                     <th><?php esc_html_e('Skill', 'rpg-skill-trees'); ?></th>
-                                                    <th><?php esc_html_e('Custom requirements', 'rpg-skill-trees'); ?></th>
+                                                    <th><?php esc_html_e('Default requirements', 'rpg-skill-trees'); ?></th>
+                                                    <th><?php esc_html_e('Custom requirements in this tree', 'rpg-skill-trees'); ?></th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?php foreach ($skills_for_tree as $skill_option): ?>
-                                                    <?php $selected_reqs = array_filter(array_map('intval', (array) ($custom_requirements[$skill_option->ID] ?? []))); ?>
+                                                    <?php
+                                                    $selected_reqs = array_filter(array_map('intval', (array) ($custom_requirements[$skill_option->ID] ?? [])));
+                                                    $default_prereqs = array_filter(array_map('intval', (array) get_post_meta($skill_option->ID, 'rst_prereq_skills', true)));
+                                                    $default_labels = [];
+                                                    foreach ($skills_for_tree as $req_option) {
+                                                        if (in_array($req_option->ID, $default_prereqs, true)) {
+                                                            $default_labels[] = $req_option->post_title;
+                                                        }
+                                                    }
+                                                    ?>
                                                     <tr>
                                                         <td><?php echo esc_html($skill_option->post_title); ?></td>
+                                                        <td>
+                                                            <?php if (!empty($default_labels)): ?>
+                                                                <ul class="rst-inline-list">
+                                                                    <?php foreach ($default_labels as $label): ?>
+                                                                        <li><?php echo esc_html($label); ?></li>
+                                                                    <?php endforeach; ?>
+                                                                </ul>
+                                                            <?php else: ?>
+                                                                <em><?php esc_html_e('None', 'rpg-skill-trees'); ?></em>
+                                                            <?php endif; ?>
+                                                        </td>
                                                         <td>
                                                             <input type="hidden" name="custom_skill_requirements[<?php echo esc_attr($skill_option->ID); ?>][]" value="" />
                                                             <select name="custom_skill_requirements[<?php echo esc_attr($skill_option->ID); ?>][]" multiple size="4">
                                                                 <?php foreach ($skills_for_tree as $req_option): ?>
+                                                                    <?php if ($req_option->ID === $skill_option->ID) { continue; } ?>
                                                                     <option value="<?php echo esc_attr($req_option->ID); ?>" <?php selected(in_array($req_option->ID, $selected_reqs, true)); ?>><?php echo esc_html($req_option->post_title); ?></option>
                                                                 <?php endforeach; ?>
                                                             </select>
