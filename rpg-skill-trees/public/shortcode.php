@@ -33,4 +33,7 @@ $settings = (new RPG_Skill_Trees())->get_settings();
     <hr class="rpg-header-separator" />
     <div class="rpg-builder-body" id="rpg-builder-body"></div>
     <svg class="rpg-prereq-lines" id="rpg-prereq-lines"></svg>
+    <div class="rpg-builder-footer">
+        <a class="rpg-footer-signature" href="https://www.weavers.cz" target="_blank" rel="noopener noreferrer"><?php esc_html_e('made by Quill of the Weavers', 'rpg-skill-trees'); ?></a>
+    </div>
 </div>

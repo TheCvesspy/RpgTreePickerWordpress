@@ -57,6 +57,9 @@
 .rpg-skill-trees-builder .button:hover, .rpg-skill-trees-builder .button-primary:hover { background:#2563eb; color:#f8fafc; border-color:#1d4ed8; }
 .rpg-skill-trees-builder .button-primary { background:#2563eb; border-color:#1d4ed8; }
 .rpg-tree-option.rpg-tree-select-all { font-weight:600; }
+.rpg-builder-footer { margin-top:12px; text-align:right; }
+.rpg-footer-signature { color:#cbd5f5; font-size:12px; text-decoration:none; }
+.rpg-footer-signature:hover { color:#f8fafc; text-decoration:underline; }
 .rpg-builder-options { display:flex; align-items:center; gap:10px; }
 .rpg-rules-toggle { display:flex; align-items:center; gap:6px; color:#cbd5f5; }
 .rpg-header-separator { border:0; border-top:1px solid #1f2937; margin:10px 0 14px; }
