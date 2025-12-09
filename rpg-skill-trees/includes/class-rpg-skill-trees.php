@@ -1,6 +1,6 @@
 <?php
 class RPG_Skill_Trees {
-    const VERSION = '1.7.8';
+    const VERSION = '1.7.17';
     const OPTION_KEY = 'rpg_skill_trees_settings';
     const BUILD_META_KEY = 'rpg_skill_trees_builds';
 
@@ -308,15 +308,35 @@ class RPG_Skill_Trees {
     }
 
     public function register_admin_menu() {
-        add_menu_page(__('RPG Skill Trees', 'rpg-skill-trees'), __('RPG Skill Trees', 'rpg-skill-trees'), 'manage_options', 'rpg-skill-trees', [$this, 'render_skill_trees_page'], 'dashicons-networking');
+        add_menu_page(__('About', 'rpg-skill-trees'), __('Skill Trees', 'rpg-skill-trees'), 'manage_options', 'rpg-skill-trees', [$this, 'render_about_page'], 'dashicons-networking');
+        add_submenu_page('rpg-skill-trees', __('About', 'rpg-skill-trees'), __('About', 'rpg-skill-trees'), 'manage_options', 'rpg-skill-trees', [$this, 'render_about_page']);
         add_submenu_page('rpg-skill-trees', __('Skill Trees', 'rpg-skill-trees'), __('Skill Trees', 'rpg-skill-trees'), 'manage_options', 'edit.php?post_type=rpg_skill_tree');
         add_submenu_page('rpg-skill-trees', __('Skills', 'rpg-skill-trees'), __('Skills', 'rpg-skill-trees'), 'manage_options', 'edit.php?post_type=rpg_skill');
         add_submenu_page('rpg-skill-trees', __('Global Settings', 'rpg-skill-trees'), __('Global Settings', 'rpg-skill-trees'), 'manage_options', 'rpg-skill-trees-settings', [$this, 'render_settings_page']);
     }
 
-    public function render_skill_trees_page() {
-        wp_redirect(admin_url('edit.php?post_type=rpg_skill_tree'));
-        exit;
+    public function render_about_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('About', 'rpg-skill-trees'); ?></h1>
+            <div class="card">
+                <h2><?php esc_html_e('Jak na to', 'rpg-skill-trees'); ?></h2>
+                <p><?php esc_html_e('Plugin umožňuje vytvářet RPG strom dovedností s tier pravidly, předpoklady a ukládáním buildů.', 'rpg-skill-trees'); ?></p>
+                <ul>
+                    <li><?php esc_html_e('Vytvářejte neomezené stromy dovedností jako vlastní příspěvky a organizujte je do přehledných struktur.', 'rpg-skill-trees'); ?></li>
+                    <li><?php esc_html_e('Přidávejte dovednosti s ikonami, tooltipy, náklady a přiřazením k tierům pro detailní ladění progresu.', 'rpg-skill-trees'); ?></li>
+                    <li><?php esc_html_e('Definujte předpoklady mezi dovednostmi nebo nastavte vlastní požadavky pro konkrétní strom.', 'rpg-skill-trees'); ?></li>
+                    <li><?php esc_html_e('Nakonfigurujte globální barvy, fonty a chování builderu pro jednotný vzhled na frontendu.', 'rpg-skill-trees'); ?></li>
+                    <li><?php esc_html_e('Vložte builder na stránky pomocí shortcode [rpg_skill_trees] a nechte hráče ukládat vlastní buildy.', 'rpg-skill-trees'); ?></li>
+                </ul>
+                <p><?php esc_html_e('Použijte odkazy v podmenu pro správu stromů, dovedností a globálního nastavení.', 'rpg-skill-trees'); ?></p>
+            </div>
+        </div>
+        <?php
     }
 
     public function render_settings_page() {
