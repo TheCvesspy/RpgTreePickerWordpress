@@ -9,6 +9,7 @@ class RPG_Skill_Trees {
         add_action('add_meta_boxes', [$this, 'register_meta_boxes']);
         add_action('save_post', [$this, 'save_meta_boxes']);
         add_action('admin_menu', [$this, 'register_admin_menu']);
+        add_action('admin_post_rpg_skill_trees_export', [$this, 'handle_export']);
         add_action('admin_enqueue_scripts', [$this, 'admin_assets']);
         add_filter('manage_rpg_skill_posts_columns', [$this, 'add_skill_columns']);
         add_action('manage_rpg_skill_posts_custom_column', [$this, 'render_skill_columns'], 10, 2);
@@ -405,6 +406,111 @@ class RPG_Skill_Trees {
             echo '<div class="updated"><p>' . esc_html__('Settings saved.', 'rpg-skill-trees') . '</p></div>';
         }
         include plugin_dir_path(__FILE__) . '../admin/settings-page.php';
+    }
+
+    public function handle_export() {
+        if (!current_user_can('manage_options')) {
+            wp_die(esc_html__('You do not have permission to export data.', 'rpg-skill-trees'));
+        }
+        check_admin_referer('rpg_skill_trees_export', 'rpg_skill_trees_export_nonce');
+
+        $data = $this->get_export_data();
+        $filename = 'rpg-skill-trees-export-' . gmdate('Y-m-d') . '.json';
+        nocache_headers();
+        header('Content-Type: application/json; charset=' . get_option('blog_charset'));
+        header('Content-Disposition: attachment; filename=' . $filename);
+        echo wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    private function get_export_data() {
+        $trees = get_posts([
+            'post_type' => 'rpg_skill_tree',
+            'numberposts' => -1,
+        ]);
+        $skills = get_posts([
+            'post_type' => 'rpg_skill',
+            'numberposts' => -1,
+        ]);
+
+        $tree_data = [];
+        foreach ($trees as $tree) {
+            $custom_skill_reqs_raw = (array) get_post_meta($tree->ID, 'rst_custom_skill_requirements', true);
+            $custom_skill_reqs = [];
+            foreach ($custom_skill_reqs_raw as $skill_id => $req_values) {
+                $skill_id = intval($skill_id);
+                $req_list = array_filter(array_map('intval', (array) $req_values));
+                if ($skill_id > 0 && !empty($req_list)) {
+                    $custom_skill_reqs[$skill_id] = array_values(array_unique($req_list));
+                }
+            }
+
+            $custom_skill_tiers_raw = (array) get_post_meta($tree->ID, 'rst_custom_skill_tiers', true);
+            $custom_skill_tiers = [];
+            foreach ($custom_skill_tiers_raw as $skill_id => $tier_value) {
+                $skill_id = intval($skill_id);
+                $tier_value = intval($tier_value);
+                if ($skill_id > 0 && $tier_value > 0) {
+                    $custom_skill_tiers[$skill_id] = max(1, min(4, $tier_value));
+                }
+            }
+
+            $tree_data[] = [
+                'id' => $tree->ID,
+                'title' => $tree->post_title,
+                'content' => $tree->post_content,
+                'icon' => esc_url(get_post_meta($tree->ID, '_rpg_icon', true)),
+                'active' => intval(get_post_meta($tree->ID, 'rst_active', true)) !== 0,
+                'tier_requirements' => (array) get_post_meta($tree->ID, '_rpg_tier_requirements', true),
+                'custom_skill_requirements' => $custom_skill_reqs,
+                'custom_skill_tiers' => $custom_skill_tiers,
+            ];
+        }
+
+        $skill_data = [];
+        $tree_skill_assignments = [];
+        foreach ($skills as $skill) {
+            $trees_for_skill = get_post_meta($skill->ID, '_rpg_trees', true);
+            if (empty($trees_for_skill)) {
+                $legacy_tree = get_post_meta($skill->ID, '_rpg_tree', true);
+                $trees_for_skill = $legacy_tree ? [$legacy_tree] : [];
+            }
+            $trees_for_skill = array_values(array_unique(array_filter(array_map('intval', (array) $trees_for_skill))));
+            foreach ($trees_for_skill as $tree_id) {
+                if (!isset($tree_skill_assignments[$tree_id])) {
+                    $tree_skill_assignments[$tree_id] = [];
+                }
+                $tree_skill_assignments[$tree_id][] = $skill->ID;
+            }
+
+            $skill_data[] = [
+                'id' => $skill->ID,
+                'title' => $skill->post_title,
+                'content' => $skill->post_content,
+                'trees' => $trees_for_skill,
+                'tier' => intval(get_post_meta($skill->ID, '_rpg_tier', true)),
+                'cost' => floatval(get_post_meta($skill->ID, '_rpg_cost', true)),
+                'icon' => esc_url(get_post_meta($skill->ID, '_rpg_icon', true)),
+                'tooltip' => get_post_meta($skill->ID, '_rpg_tooltip', true),
+                'effect' => get_post_meta($skill->ID, '_rpg_effect', true),
+                'prereqs' => array_filter(array_map('intval', (array) get_post_meta($skill->ID, '_rpg_prereqs', true))),
+                'sort_order' => intval(get_post_meta($skill->ID, 'rst_sort_order', true)),
+            ];
+        }
+
+        ksort($tree_skill_assignments);
+        foreach ($tree_skill_assignments as $tree_id => $skill_ids) {
+            $tree_skill_assignments[$tree_id] = array_values(array_unique(array_map('intval', $skill_ids)));
+        }
+
+        return [
+            'exported_at' => gmdate('c'),
+            'plugin_version' => self::VERSION,
+            'settings' => $this->get_settings(),
+            'skill_trees' => $tree_data,
+            'skills' => $skill_data,
+            'tree_skill_assignments' => $tree_skill_assignments,
+        ];
     }
 
     public function admin_assets($hook) {

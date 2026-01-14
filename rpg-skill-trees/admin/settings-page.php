@@ -243,4 +243,14 @@ $settings = isset($settings) ? $settings : [];
         </table>
         <?php submit_button(); ?>
     </form>
+
+    <hr />
+
+    <h2><?php esc_html_e('Export Configuration', 'rpg-skill-trees'); ?></h2>
+    <p><?php esc_html_e('Download a JSON export of global settings, skill trees, skills, and their assignments.', 'rpg-skill-trees'); ?></p>
+    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+        <?php wp_nonce_field('rpg_skill_trees_export', 'rpg_skill_trees_export_nonce'); ?>
+        <input type="hidden" name="action" value="rpg_skill_trees_export" />
+        <?php submit_button(__('Export JSON', 'rpg-skill-trees'), 'secondary'); ?>
+    </form>
 </div>
